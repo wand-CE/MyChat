@@ -1,0 +1,12 @@
+{% extends "account/base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}{% trans "Verify Your Email Address" %}{% endblock head_title %}
+
+{% block content %}
+    <h1>{% trans "Verify Your Email Address" %}</h1>    
+    <p>
+    Acabamos de enviar uma mensagem contendo um link para finalizar o cadastro. Caso não receba a mensagem, lembre de verificar a caixa de spam. Entre em contato conosco se a mensagem não chegar dentro de alguns minutos.
+    </p>
+{% endblock content %}

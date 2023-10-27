@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+{% load bootstrap4 %}
+{% load static %}
+
+
+{% block head_title %}{% trans "Signup" %}{% endblock head_title %}
+{% block extra_head %}
+<link rel="stylesheet" type="text/css" href="{% static '/css/account/login-sign-up.css' %}">
+{% endblock %}
+{% block content %}
+<div class="container my-5">
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="mb-4 text-center">{% trans "Sign Up" %}</h1>
+
+                    <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {% bootstrap_form form %}
+                        </div>
+                        {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
+                        {% endif %}
+                        <button class="btn btn-primary btn-block" type="submit">{% trans "Sign Up" %} &raquo;</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock content %}
