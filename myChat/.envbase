@@ -1,0 +1,13 @@
+# settings.py
+SECRET_KEY=
+
+# database settings
+DATABASE_NAME=
+DATABASE_HOST=
+DATABASE_USER=
+DATABASE_PASS=
+
+# email settings
+EMAIL_HOST=
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=

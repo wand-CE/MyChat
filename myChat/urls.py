@@ -22,8 +22,7 @@ from django.conf import settings
 from chats.views import Home
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('accounts/', include('allauth.urls')),
-    path('', Home.as_view(), name='home'),
-]
-# + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+                  path('admin/', admin.site.urls),
+                  path('accounts/', include('allauth.urls')),
+                  path('', Home.as_view(), name='home'),
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
