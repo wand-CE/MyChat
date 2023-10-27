@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+{% if not user.is_authenticated %}
+<script>
+    window.location.href = "{% url 'account_login' %}";
+</script>
+{% endif %}
+
+<div class="container text-center mt-5" >
+    <h1>MyChat</h1>
+    {% if user.is_authenticated %}
+    <h3>Welcome {{ user.username }} !!!</h3>
+    {% else %}
+    <!--
+    <h3>Bem-vindo(a) ao MyChat!</h3>
+        <p>Após fazer o login, você poderá:</p>
+        <ul class="list-group list-group-flush text-left">
+            <li class="list-group-item">Ter conversas animadas</li>
+            <li class="list-group-item">Conectar-se com amigos</li>
+            <li class="list-group-item">Compartilhar fotos, vídeos e memórias</li>
+            <li class="list-group-item">Manter-se atualizado com as últimas notícias de seus grupos</li>
+            <li class="list-group-item">E muito mais...</li>
+        </ul>
+        <a href="{% url 'account_login' %}" class="btn btn-primary mt-3">Fazer login agora</a>
+    -->
+
+    {% endif %}
+</div>
+
+{% endblock content %}
