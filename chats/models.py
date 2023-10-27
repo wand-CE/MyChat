@@ -5,11 +5,10 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 
 
 class Profile(models.Model):
-    user = models.CharField(max_length=150)
-    # email = models.EmailField(max_length=254, unique=True)
-    # password = models.CharField(max_length=128)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     photo = StdImageField(upload_to='profile_photos',
-                          variations={'thumb': {'width': 600, 'height': 600, 'crop': True}}, default='profile_photos/defaultProfile.png')
+                          variations={'thumb': {'width': 600, 'height': 600, 'crop': True}},
+                          default='profile_photos/defaultProfile.png')
     status = models.CharField(max_length=50, choices=[(
         'online', 'Online'), ('offline', 'Offline')], default='offline')
 
@@ -54,7 +53,6 @@ class Message(models.Model):
 class Conversation(models.Model):
     participants = models.ManyToManyField(
         Profile, related_name='conversations')
-
 
 # class Notification(models.Model):
 #    user = models.ForeignKey(User, on_delete=models.CASCADE)
