@@ -21,17 +21,23 @@ class Profile(models.Model):
         verbose_name_plural = 'Profiles'
 
     def __str__(self):
-        return f"Profile of {self.name} created"
+        return self.name
+
+
+class Conversation(models.Model):
+    participants = models.ManyToManyField(
+        Profile, related_name='conversations')
+
+    class Meta:
+        verbose_name = 'Conversation'
+        verbose_name_plural = 'Conversations'
 
 
 class Message(models.Model):
-    sender = models.ForeignKey(
-        Profile, related_name='sent_messages', on_delete=models.CASCADE, blank=False)
-    recipient = models.ForeignKey(
-        Profile, related_name='received_messages', on_delete=models.CASCADE, blank=False)
-    content = models.TextField(null=False)
+    sender = models.ForeignKey(Profile, related_name='sent_messages', on_delete=models.CASCADE)
+    conversation = models.ForeignKey(Conversation, related_name='messages', on_delete=models.CASCADE)
+    content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Message'
@@ -46,13 +52,8 @@ class Message(models.Model):
             raise ValidationError("")
 
     def save(self, *args, **kwargs):
-        self.clean()
+        # self.clean()
         super().save(*args, **kwargs)
-
-
-class Conversation(models.Model):
-    participants = models.ManyToManyField(
-        Profile, related_name='conversations')
 
 # class Notification(models.Model):
 #    user = models.ForeignKey(User, on_delete=models.CASCADE)
