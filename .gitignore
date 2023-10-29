@@ -1,8 +1,10 @@
-venv
+venv*
 __pycache__
 .idea
 .vscode
 .env
+
+.prettierignore
 
 static/admin/
 media/profile_photos/*

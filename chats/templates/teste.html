@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Chat{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" type="text/css" href="{% static '/css/chats.css' %}">
+{% endblock %}
+
+{% if user.is_authenticated %}
+        {% block content %}
+        <div class="container mt-5">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="list-group">
+                        <div class="input-group border shadow search-bar mb-1">
+                            <input
+                                    type="text"
+                                    class="form-control border-0 shadow-none"
+                                    placeholder="Pesquisar..."
+                            />
+                            <div class="input-group-append">
+                        <span
+                                class="btn input-group-text bg-white border-0 shadow-none"
+                        >
+                          <i class="bi bi-search"></i>
+                        </span>
+                            </div>
+                        </div>
+                        {% for profile in profiles %}
+                        {% if profile.user != request.user %}
+                        <a
+                                href="#"
+                                class="list-group-item list-group-item-action d-flex align-items-center chat-item"
+                        >
+                            <img
+                                    class="mr-3 rounded-circle"
+                                    src="/media/{{ profile.photo }}"
+                            />
+                            {{ profile.name }}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div
+                                class="card-body"
+                                id="chat-content"
+                        >
+                            {% if messages %}
+                            <b id="sendMessage" class="d-none">Envie uma mensagem.</b>
+                            {% for message in messages %}
+                            <div class="d-flex {% if message.sender.user == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
+                                <div
+                                        class="p-2 {% if message.sender.user == request.user %}bg-primary{% else %}bg-secondary{% endif %} text-white rounded"
+                                >
+                                    <b>{{ message.sender }}</b> : {{ message.content }}<br>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <b id="sendMessage">Envie uma mensagem.</b>
+                            {% endif %}
+
+                        </div>
+                        <div class="card-footer">
+                            <div class="input-group">
+                                <input
+                                        type="text"
+                                        class="form-control"
+                                        id="my_input"
+                                        placeholder="Digite sua mensagem..."
+                                />
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-success" id="submit_button" type="button">Enviar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{room_name|json_script:"room_slug"}}
+        
+
+        <br/>
+
+        {% endblock content %}
+{% block extra_body %}
+  <script>
+
+    const chatbox = document.querySelector("#chat-content");
+
+
+      function scrollToBottom() {
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+
+      scrollToBottom();
+
+        const roomName= JSON.parse(document.getElementById('room_slug').textContent);
+        console.log(roomName)
+        const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/" + roomName +"/");
+
+        chatSocket.onopen = function (e) {
+          console.log("The connection was setup successfully !");
+        };
+        chatSocket.onclose = function (e) {
+          console.log("Something unexpected happened !");
+        };
+
+        const sendButton = document.querySelector("#submit_button");
+
+        document.querySelector("#my_input").onkeyup = function (e) {
+          if (e.keyCode == 13) {
+            e.preventDefault();
+            sendButton.click();
+          }
+        };
+
+        sendButton.onclick = function (e) {
+          var messageInput = document.querySelector(
+            "#my_input"
+          ).value;
+
+          if(messageInput.length == 0)
+            {
+                alert("Escreva algo!")
+            }
+            else
+            {
+              chatSocket.send(JSON.stringify({ message: messageInput, username : "{{request.user.username}}",room_name:"{{room_name}}"}));
+            }
+
+        };
+
+        chatSocket.onmessage = function (e) {
+          const data = JSON.parse(e.data);
+          var div = document.createElement("div");
+          var div_child = document.createElement("div");
+
+          div_child.classList.add("p-2", "text-white", "rounded");
+          div_child.innerHTML = "<b>" + data.username + "</b> : " + data.message;
+
+          div.appendChild(div_child);
+
+          div.classList.add("d-flex",  "mb-2");
+
+          if (data.username === "{{ request.user.username }}") {
+            div.classList.add("justify-content-end");
+            div_child.classList.add("bg-primary");
+          } else {
+            div.classList.add("justify-content-start");
+            div_child.classList.add("bg-secondary");
+          }
+
+
+          const messagesContent = document.querySelector("#chat-content");
+
+          messagesContent.addEventListener("change", ()=>{console.log('OLA')});
+
+          
+
+          document.querySelector("#my_input").value = "";
+          document.getElementById('sendMessage').className = 'd-none';
+          messagesContent.appendChild(div);
+          scrollToBottom();
+        };
+  </script>
+
+{% endblock extra_body %}
+{% endif %}

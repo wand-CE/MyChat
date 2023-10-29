@@ -1,0 +1,43 @@
+.buttons {
+  background-color: #002f5d !important;
+  color: white;
+}
+
+.p-2.bg-primary {
+  background-color: #002f5d !important;
+}
+.home_button {
+  color: white;
+}
+
+#chat-content {
+  background-color: aliceblue;
+  height: 400px;
+  overflow-y: auto;
+}
+
+#chat-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+#chat-content::-webkit-scrollbar-track {
+  background: #f4f4f4;
+}
+
+#chat-content::-webkit-scrollbar-thumb {
+  background-color: #002f5d;
+}
+
+#chat-content {
+  scrollbar-width: thin;
+}
+
+.chat-item img {
+  width: 40px;
+  height: 40px;
+}
+
+.p-2.bg-secondary,
+.p-2.bg-primary {
+  max-width: 60%;
+}
