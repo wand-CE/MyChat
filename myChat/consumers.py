@@ -8,11 +8,11 @@ from chats.models import Conversation, Message, Profile
 
 class ChatRoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = 'chat_%s' % self.room_name
+        self.chat_uuid = self.scope['url_route']['kwargs']['chat_uuid']
+        self.chat_group_name = f'chat_{self.chat_uuid}'
 
         await self.channel_layer.group_add(
-            self.room_group_name,
+            self.chat_group_name,
             self.channel_name
         )
 
@@ -20,7 +20,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
-            self.room_group_name,
+            self.chat_group_name,
             self.channel_name
         )
 
@@ -28,31 +28,33 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         username = text_data_json['username']
-        room_name = text_data_json["room_name"]
+        chat_uuid = text_data_json["chat_uuid"]
 
-        await self.save_message(message, username, room_name)
+        await self.save_message(message, username, chat_uuid)
 
         await self.channel_layer.group_send(
-            self.room_group_name,
+            self.chat_group_name,
             {
                 'type': 'sendMessage',
                 'message': message,
                 'username': username,
-                "room_name": room_name,
+                "chat_uuid": chat_uuid,
             }
         )
 
     async def sendMessage(self, event):
         message = event["message"]
         username = event["username"]
-        await self.send(text_data=json.dumps({"message": message, "username": username}))
+        await self.send(text_data=json.dumps({
+            "message": message,
+            "username": username,
+        }))
 
     @sync_to_async
-    def save_message(self, message, username, room_name):
-        print(username, room_name, "----------------------")
+    def save_message(self, message, username, chat_uuid):
+        print(username, chat_uuid, "----------------------")
         user = User.objects.get(username=username)
         user_profile = Profile.objects.get(user=user)
-        # room = Room.objects.get(name=room_name)
+        chat = Conversation.objects.get(uuid=chat_uuid)
 
-        # id 3 was the id of conversation_model created to test
-        Message.objects.create(sender=user_profile, content=message, conversation_id=3)
+        Message.objects.create(sender=user_profile, content=message, conversation_id=chat.id)
