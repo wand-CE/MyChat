@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 
-
 {% block content %}
 {% if not user.is_authenticated %}
 <script>
@@ -9,10 +8,23 @@
 </script>
 {% endif %}
 
-<div class="container text-center mt-5" >
+<div class="container text-center mt-5">
     <h1>MyChat</h1>
     {% if user.is_authenticated %}
     <h3>Welcome {{ user.username }} !!!</h3>
+    <div class="container">
+        <h4>Meus contatos:</h4>
+        {% for profile in profiles %}
+        {% if profile.name != user.username %}
+        <a class="list-unstyled" href="{% url 'redirect_chat' user.username profile.name %}">
+            <li class="border  p-3  bg-dark text-white">
+                {{ profile.name }}
+            </li>
+        </a>
+        {% endif %}
+        {% endfor %}
+
+    </div>
     {% else %}
     <!--
     <h3>Bem-vindo(a) ao MyChat!</h3>

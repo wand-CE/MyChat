@@ -6,5 +6,5 @@ from django.conf import settings
 urlpatterns = [
                   path('admin/', admin.site.urls),
                   path('accounts/', include('allauth.urls')),
-                  path('chat/', include('chats.urls')),
+                  path('', include('chats.urls')),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

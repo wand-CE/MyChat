@@ -8,89 +8,89 @@
 {% endblock %}
 
 {% if user.is_authenticated %}
-        {% block content %}
-        <div class="container mt-5">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="list-group">
-                        <div class="input-group border shadow search-bar mb-1">
-                            <input
-                                    type="text"
-                                    class="form-control border-0 shadow-none"
-                                    placeholder="Pesquisar..."
-                            />
-                            <div class="input-group-append">
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="list-group">
+                <div class="input-group border shadow search-bar mb-1">
+                    <input
+                            type="text"
+                            class="form-control border-0 shadow-none"
+                            id="search_input"
+                            placeholder="Pesquisar..."
+                    />
+                    <div class="input-group-append" id="search_button">
                         <span
                                 class="btn input-group-text bg-white border-0 shadow-none"
                         >
                           <i class="bi bi-search"></i>
                         </span>
-                            </div>
-                        </div>
-                        {% for profile in profiles %}
-                        {% if profile.user != request.user %}
-                        <a
-                                href="#"
-                                class="list-group-item list-group-item-action d-flex align-items-center chat-item"
-                        >
-                            <img
-                                    class="mr-3 rounded-circle"
-                                    src="/media/{{ profile.photo }}"
-                            />
-                            {{ profile.name }}
-                        </a>
-                        {% endif %}
-                        {% endfor %}
                     </div>
                 </div>
-                <div class="col-md-8">
-                    <div class="card">
+                {% for profile in profiles %}
+                {% if profile.user != request.user %}
+                <a
+                        href="#"
+                        class="list-group-item list-group-item-action d-flex align-items-center chat-item"
+                >
+                    <img
+                            class="mr-3 rounded-circle"
+                            src="/media/{{ profile.photo }}"
+                    />
+                    {{ profile.name }}
+                </a>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div
+                        class="card-body"
+                        id="chat-content"
+                >
+                    {% if messages %}
+                    <b id="sendMessage" class="d-none">Envie uma mensagem.</b>
+                    {% for message in messages %}
+                    <div class="d-flex {% if message.sender.user == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
                         <div
-                                class="card-body"
-                                id="chat-content"
+                                class="p-2 {% if message.sender.user == request.user %}bg-primary{% else %}bg-secondary{% endif %} text-white rounded"
                         >
-                            {% if messages %}
-                            <b id="sendMessage" class="d-none">Envie uma mensagem.</b>
-                            {% for message in messages %}
-                            <div class="d-flex {% if message.sender.user == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
-                                <div
-                                        class="p-2 {% if message.sender.user == request.user %}bg-primary{% else %}bg-secondary{% endif %} text-white rounded"
-                                >
-                                    <b>{{ message.sender }}</b> : {{ message.content }}<br>
-                                </div>
-                            </div>
-                            {% endfor %}
-                            {% else %}
-                            <b id="sendMessage">Envie uma mensagem.</b>
-                            {% endif %}
-
+                            <b>{{ message.sender }}</b> : {{ message.content }}<br>
                         </div>
-                        <div class="card-footer">
-                            <div class="input-group">
-                                <input
-                                        type="text"
-                                        class="form-control"
-                                        id="my_input"
-                                        placeholder="Digite sua mensagem..."
-                                />
-                                <div class="input-group-append">
-                                    <button class="btn btn-outline-success" id="submit_button" type="button">Enviar</button>
-                                </div>
-                            </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <b id="sendMessage">Envie uma mensagem.</b>
+                    {% endif %}
+
+                </div>
+                <div class="card-footer">
+                    <div class="input-group">
+                        <input
+                                type="text"
+                                class="form-control"
+                                id="my_input"
+                                placeholder="Digite sua mensagem..."
+                        />
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-success" id="submit_button" type="button">Enviar</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        {{room_name|json_script:"room_slug"}}
-        
+{{chat_uuid|json_script:"chat_uuid"}}
 
-        <br/>
+<br/>
 
-        {% endblock content %}
+{% endblock content %}
 {% block extra_body %}
-  <script>
+<script>
 
     const chatbox = document.querySelector("#chat-content");
 
@@ -101,9 +101,9 @@
 
       scrollToBottom();
 
-        const roomName= JSON.parse(document.getElementById('room_slug').textContent);
-        console.log(roomName)
-        const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/" + roomName +"/");
+        const chat_uuid= JSON.parse(document.getElementById('chat_uuid').textContent);
+        
+        const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/" + chat_uuid +"/");
 
         chatSocket.onopen = function (e) {
           console.log("The connection was setup successfully !");
@@ -132,7 +132,11 @@
             }
             else
             {
-              chatSocket.send(JSON.stringify({ message: messageInput, username : "{{request.user.username}}",room_name:"{{room_name}}"}));
+              chatSocket.send(JSON.stringify({
+                message: messageInput,
+                username : "{{request.user.username}}",
+                chat_uuid: "{{chat_uuid}}",
+              }));
             }
 
         };
@@ -169,7 +173,15 @@
           messagesContent.appendChild(div);
           scrollToBottom();
         };
-  </script>
-
+</script>
+<script>
+  const search_button = document.getElementById("search_button");
+  const search_input = document.getElementById("search_input");
+  console.log(window.location.host);
+  
+  search_button.addEventListener("click", () => {
+    window.location.href = `${window.location.origin}/search_page`;
+  })
+</script>
 {% endblock extra_body %}
 {% endif %}
