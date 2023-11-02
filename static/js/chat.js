@@ -1,4 +1,7 @@
 const chatbox = document.querySelector("#chat-content");
+const messages = document.querySelector("#messages");
+
+let chatSocket;
 
 function scrollToBottom() {
   chatbox.scrollTop = chatbox.scrollHeight;
@@ -6,12 +9,13 @@ function scrollToBottom() {
 
 scrollToBottom();
 const csrftoken = JSON.parse(document.getElementById("csrf_token").textContent);
+let current_user_id;
 
 document.addEventListener("DOMContentLoaded", () =>
   document.getElementById("csrf_token").remove()
 );
 
-function claim_websocket(contact_id, csrftoken) {
+function claim_websocket(contact_id) {
   fetch("/return_chat/", {
     method: "POST",
     headers: { "X-CSRFToken": csrftoken },
@@ -25,14 +29,43 @@ function claim_websocket(contact_id, csrftoken) {
         throw new error(response.error);
       }
     })
-    .then((data) => {
-      const chatSocket = new WebSocket(
-        "ws://" + window.location.host + "/ws/chat/" + data["chat_uuid"] + "/"
-      );
-      console.log(chatSocket);
+    .then((data_file) => {
+      if (chatSocket) {
+        chatSocket.close();
+      }
 
-      chatSocket.onopen = (e) => {};
-      chatSocket.onclose = (e) => {};
+      chatSocket = new WebSocket(
+        "ws://" +
+          window.location.host +
+          "/ws/chat/" +
+          data_file["chat_uuid"] +
+          "/"
+      );
+
+      messages.innerHTML = "";
+
+      chatSocket.onopen = (e) => {
+        fetch("chat/get_old_messages/", {
+          method: "POST",
+          headers: { "X-CSRFToken": csrftoken },
+          mode: "same-origin",
+          body: JSON.stringify(data_file["chat_uuid"]),
+        })
+          .then((response) => {
+            if (response.ok) {
+              return response.json();
+            }
+            throw new Error(response.error);
+          })
+          .then((data) => {
+            data["messages"].forEach((element) => {
+              populate_messages(element[0], element[1]);
+            });
+          });
+      };
+      chatSocket.onclose = (e) => {
+        console.log("fechou");
+      };
 
       const sendButton = document.querySelector("#submit_button");
 
@@ -44,7 +77,7 @@ function claim_websocket(contact_id, csrftoken) {
       };
 
       sendButton.onclick = function (e) {
-        var messageInput = document.querySelector("#my_input").value;
+        let messageInput = document.querySelector("#my_input").value;
 
         if (messageInput.length == 0) {
           alert("Escreva algo!");
@@ -52,39 +85,18 @@ function claim_websocket(contact_id, csrftoken) {
           chatSocket.send(
             JSON.stringify({
               message: messageInput,
-              user_id: data["current_user_id"],
-              chat_uuid: data["chat_uuid"],
+              user_id: data_file["current_user_id"],
+              chat_uuid: data_file["chat_uuid"],
             })
           );
         }
       };
 
+      current_user_id = data_file["current_user_id"];
+
       chatSocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
-        var div = document.createElement("div");
-        var div_child = document.createElement("div");
-
-        div_child.classList.add("p-2", "text-white", "rounded");
-        div_child.innerHTML = "<b>" + data.user_id + "</b> : " + data.message;
-
-        div.appendChild(div_child);
-
-        div.classList.add("d-flex", "mb-2");
-
-        if (data.username === "{{ request.user.username }}") {
-          div.classList.add("justify-content-end");
-          div_child.classList.add("bg-primary");
-        } else {
-          div.classList.add("justify-content-start");
-          div_child.classList.add("bg-secondary");
-        }
-
-        const messagesContent = document.querySelector("#chat-content");
-
-        document.querySelector("#my_input").value = "";
-        document.getElementById("sendMessage").className = "d-none";
-        messagesContent.appendChild(div);
-        scrollToBottom();
+        populate_messages(data.user_id, data.message);
       };
     })
     .catch((error) => {
@@ -102,6 +114,31 @@ document
       const contact_id = event.target.dataset.contact_id
         ? event.target.dataset.contact_id
         : event.target.parentElement.dataset.contact_id;
-      claim_websocket(contact_id, csrftoken);
+      claim_websocket(contact_id);
     }
   });
+
+function populate_messages(user_id, message) {
+  let div = document.createElement("div");
+  let div_child = document.createElement("div");
+
+  div_child.classList.add("p-2", "text-white", "rounded");
+  div_child.innerHTML = message;
+
+  div.appendChild(div_child);
+
+  div.classList.add("d-flex", "mb-2");
+
+  if (user_id === current_user_id) {
+    div.classList.add("justify-content-end");
+    div_child.classList.add("bg-primary");
+  } else {
+    div.classList.add("justify-content-start");
+    div_child.classList.add("bg-secondary");
+  }
+
+  document.querySelector("#my_input").value = "";
+  document.getElementById("sendMessage").className = "d-none";
+  messages.appendChild(div);
+  scrollToBottom();
+}

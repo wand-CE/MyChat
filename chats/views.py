@@ -47,7 +47,22 @@ class ReturnChat(LoginRequiredMixin, View):
                 conversation.participants.add(user1, user2)
 
             chat_uuid = conversation.uuid
-            return JsonResponse({'chat_uuid': chat_uuid, 'current_user_id': request.user.id, })
+            return JsonResponse({'chat_uuid': chat_uuid,
+                                 'current_user_id': request.user.id,
+                                 'current_user_name': request.user.username})
         except Exception as e:
             print(e)
             return HttpResponseNotFound()
+
+
+class GetOldMessages(LoginRequiredMixin, View):
+    def post(self, request):
+        chat_uuid = json.loads(request.body)        
+        conversation = Conversation.objects.get(uuid=chat_uuid)
+        messages = Message.objects.filter(conversation=conversation.id)
+
+        messages = [[message.sender.user.id, message.content] for message in messages]
+
+        return JsonResponse({'messages': messages})
+        
+

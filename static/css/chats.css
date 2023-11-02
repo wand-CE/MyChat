@@ -46,3 +46,7 @@
   background-color: #002f5d !important;
   color: white !important;
 }
+
+.chat-item {
+  cursor: pointer;
+}
