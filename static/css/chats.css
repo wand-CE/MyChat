@@ -41,3 +41,8 @@
 .p-2.bg-primary {
   max-width: 60%;
 }
+
+.active-chat {
+  background-color: #002f5d !important;
+  color: white !important;
+}
