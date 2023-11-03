@@ -35,11 +35,13 @@
                 >
                     <img
                             class="mr-3 rounded-circle"
-                            src="/media/{{ contact.friend.photo }}"
+                            src="{{ contact.friend.photo.url }}"
                     />
                     {{ contact.friend.name }}
-                </a>
+                </a>                
                 {% endfor %}
+                  <!-- TEMPORARIO -->
+                <div id="temp_test" class="border p-5 bg-dark"></div>
             </div>
         </div>
         <div class="col-md-8">
@@ -50,23 +52,6 @@
                 >
                     <strong id="sendMessage">Selecione ou adicione um amigo para conversar</strong>
                     <span id="messages"></span>
-                    <!--
-                    {% if messages %}
-                    <b id="sendMessage" class="d-none">Envie uma mensagem.</b>
-                    {% for message in messages %}
-                    <div class="d-flex {% if message.sender.user == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
-                        <div
-                                class="p-2 {% if message.sender.user == request.user %}bg-primary{% else %}bg-secondary{% endif %} text-white rounded"
-                        >
-                            <b>{{ message.sender }}</b> : {{ message.content }}<br>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <b id="sendMessage">Envie uma mensagem.</b>
-                    -->
-                    {% endif %}
-
                 </div>
                 <div class="card-footer">
                     <div class="input-group">
@@ -94,55 +79,5 @@
 {% block extra_body %}
 <script src="{% static 'js/chat.js' %}" type="module">
 </script>
-
-<script>
-    const search_button = document.getElementById("search_button");
-    const search_input = document.getElementById("search_input");
-
-    search_button.addEventListener("click", () => {
-      window.location.href = `${window.location.origin}/search_page`;
-    })
-</script>
-
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-      let chatItems = document.querySelectorAll(".chat-item");
-      chatItems.forEach((item) => {
-        item.addEventListener("click", function () {
-          chatItems.forEach((chat) => chat.classList.remove("active-chat"));
-          item.classList.add("active-chat");
-        });
-      });
-    });
-</script>
-
-<!-- 
-<script>
-    const chatList = document.getElementById("chat-list");
-    const messageContainer = document.getElementById("message-container");
-
-    chatList.addEventListener("click", (event) => {
-      if (event.target.classList.contains("chat")) {
-        const chatId = event.target.getAttribute("data-chat-id");
-        loadMessagesForChat(chatId);
-      }
-    });
-
-    function loadMessagesForChat(chatId) {
-      // Lógica para carregar mensagens para o chat especificado
-      // Pode ser uma solicitação AJAX para buscar mensagens do servidor
-      // e adicioná-las ao elemento messageContainer
-      // Certifique-se de limpar o messageContainer antes de adicionar novas mensagens
-      clearMessageContainer();
-      // Carregue e exiba as mensagens para o chat selecionado
-    }
-
-    function clearMessageContainer() {
-      // Lógica para limpar o elemento messageContainer
-      messageContainer.innerHTML = "";
-    }
-</script>
--->
 {% endblock extra_body %}
 {% endif %}

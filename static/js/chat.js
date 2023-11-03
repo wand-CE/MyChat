@@ -142,3 +142,44 @@ function populate_messages(user_id, message) {
   messages.appendChild(div);
   scrollToBottom();
 }
+
+//Muda a cor do contato selecionado
+document.addEventListener("DOMContentLoaded", function () {
+  let chatItems = document.querySelectorAll(".chat-item");
+  chatItems.forEach((item) => {
+    item.addEventListener("click", function () {
+      chatItems.forEach((chat) => chat.classList.remove("active-chat"));
+      item.classList.add("active-chat");
+    });
+  });
+});
+
+const search_button = document.getElementById("search_button");
+const search_input = document.getElementById("search_input");
+
+//temporario
+const contacts = document.getElementById("contact_and_search");
+
+search_button.addEventListener("click", () => {
+  fetch(`/search_page?searched=${search_input.value}`)
+    .then((response) => response.json())
+    .then((data) => {
+      data = data.profiles;
+
+      data.forEach((item) => {
+        let element = document.createElement("a");
+        element.className =
+          "list-group-item list-group-item-action d-flex align-items-center chat-item";
+        element.dataset.contact_id = item.id;
+
+        let profile_photo = document.createElement("img");
+        profile_photo.className = "mr-3 rounded-circle";
+        profile_photo.src = item.photo;
+
+        element.appendChild(profile_photo);
+        element.innerHTML += item.name;
+
+        contacts.appendChild(element);
+      });
+    });
+});

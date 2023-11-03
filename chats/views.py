@@ -1,5 +1,6 @@
 import json
 from django.contrib.auth.models import User
+from django.db.models import Q
 
 from django.http import HttpResponseNotFound, JsonResponse
 from django.views.generic import TemplateView, View
@@ -19,16 +20,26 @@ class ChatView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class SearchView(LoginRequiredMixin, TemplateView):
-    template_name = 'search.html'
+class SearchView(LoginRequiredMixin, View):
+    def get(self, request):
+        current_user = request.user
+        searched = request.GET.get('searched')
+        users = User.objects.filter(
+            Q(username__contains=searched) & ~Q(id=current_user.id)
+        )
 
-    def post(self, request):
-        searched = request.POST.get('searched')
-        users = User.objects.filter(username__contains=searched)
+        profiles = [Profile.objects.get(user=user) for user in users]
 
-        profiles = [Profile.objects.get(user=user).name for user in users]
+        list_profiles = []
+        for profile in profiles:
+            dicio = {}
+            dicio['id'] = profile.id
+            dicio['name'] = profile.name
+            dicio['photo'] = profile.photo.url
 
-        return JsonResponse({'profiles': profiles})
+            list_profiles.append(dicio)
+
+        return JsonResponse({'profiles': list_profiles})
 
 
 class ReturnChat(LoginRequiredMixin, View):
@@ -47,9 +58,11 @@ class ReturnChat(LoginRequiredMixin, View):
                 conversation.participants.add(user1, user2)
 
             chat_uuid = conversation.uuid
-            return JsonResponse({'chat_uuid': chat_uuid,
-                                 'current_user_id': request.user.id,
-                                 'current_user_name': request.user.username})
+            return JsonResponse({
+                'chat_uuid': chat_uuid,
+                'current_user_id': request.user.id,
+                'current_user_name': request.user.username
+            })
         except Exception as e:
             print(e)
             return HttpResponseNotFound()
@@ -57,12 +70,10 @@ class ReturnChat(LoginRequiredMixin, View):
 
 class GetOldMessages(LoginRequiredMixin, View):
     def post(self, request):
-        chat_uuid = json.loads(request.body)        
+        chat_uuid = json.loads(request.body)
         conversation = Conversation.objects.get(uuid=chat_uuid)
         messages = Message.objects.filter(conversation=conversation.id)
 
         messages = [[message.sender.user.id, message.content] for message in messages]
 
         return JsonResponse({'messages': messages})
-        
-
