@@ -1,6 +1,17 @@
 const chatbox = document.querySelector("#chat-content");
 const messages = document.querySelector("#messages");
 
+const notifySocket = new WebSocket(`ws://${window.location.host}/ws/notify/`);
+
+notifySocket.onmessage = function (event) {
+  var data = JSON.parse(event.data);
+  if (data.type === "message_updated") {
+    // Tratar a notificação de atualização de mensagem
+    console.log("Mensagem atualizada para a conversa: " + data.chat_uuid);
+    // Atualizar a interface do usuário, por exemplo, carregar as mensagens atualizadas da conversa
+  }
+};
+
 let chatSocket;
 
 function scrollToBottom() {
@@ -26,7 +37,7 @@ function claim_websocket(contact_id) {
       if (response.ok) {
         return response.json();
       } else {
-        throw new error(response.error);
+        throw new error(response.status);
       }
     })
     .then((data_file) => {
@@ -35,11 +46,7 @@ function claim_websocket(contact_id) {
       }
 
       chatSocket = new WebSocket(
-        "ws://" +
-          window.location.host +
-          "/ws/chat/" +
-          data_file["chat_uuid"] +
-          "/"
+        `ws://${window.location.host}/ws/chat/${data_file["chat_uuid"]}/`
       );
 
       messages.innerHTML = "";
@@ -55,7 +62,7 @@ function claim_websocket(contact_id) {
             if (response.ok) {
               return response.json();
             }
-            throw new Error(response.error);
+            throw new Error(response.status);
           })
           .then((data) => {
             data["messages"].forEach((element) => {
@@ -154,32 +161,69 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-const search_button = document.getElementById("search_button");
-const search_input = document.getElementById("search_input");
-
 //temporario
 const contacts = document.getElementById("contact_and_search");
 
-search_button.addEventListener("click", () => {
+const search_input = document.getElementById("search_input");
+const searchResults = document.getElementById("temp_test");
+
+// Simula a busca e exibe resultados temporariamente
+search_input.addEventListener("input", () => {
+  const query = search_input.value;
+  if (query.trim() === "") {
+    searchResults.style.display = "none";
+    return;
+  }
   fetch(`/search_page?searched=${search_input.value}`)
-    .then((response) => response.json())
+    .then((response) =>
+      response.ok ? response.json() : new Error(response.status)
+    )
     .then((data) => {
-      data = data.profiles;
+      const results = data.profiles;
+      searchResults.innerHTML = "";
 
-      data.forEach((item) => {
-        let element = document.createElement("a");
-        element.className =
-          "list-group-item list-group-item-action d-flex align-items-center chat-item";
-        element.dataset.contact_id = item.id;
+      if (results.length) {
+        results.forEach((result) => {
+          const element = document.createElement("a");
 
-        let profile_photo = document.createElement("img");
-        profile_photo.className = "mr-3 rounded-circle";
-        profile_photo.src = item.photo;
+          element.classList.add(
+            "list-group-item",
+            "list-group-item-action",
+            "d-flex",
+            "align-items-center",
+            "chat-item"
+          );
+          element.dataset.contact_id = result.id;
 
-        element.appendChild(profile_photo);
-        element.innerHTML += item.name;
+          let profile_photo = document.createElement("img");
+          profile_photo.className = "mr-3 rounded-circle";
+          profile_photo.src = result.photo;
 
-        contacts.appendChild(element);
-      });
+          element.appendChild(profile_photo);
+          element.innerHTML += result.name;
+
+          searchResults.appendChild(element);
+        });
+      } else {
+        const element = document.createElement("div");
+
+        element.classList.add(
+          "list-group-item",
+          "list-group-item-action",
+          "d-flex",
+          "align-items-center"
+        );
+
+        element.innerHTML += "Usuário não encontrado";
+
+        searchResults.appendChild(element);
+      }
+      searchResults.style.display = "block";
     });
+});
+
+document.addEventListener("click", (event) => {
+  if (!searchResults.contains(event.target) && event.target !== search_input) {
+    searchResults.style.display = "none";
+  }
 });

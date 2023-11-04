@@ -1,7 +1,12 @@
 from django.urls import path, include, re_path
-from .consumers import ChatRoomConsumer
+from .consumers import ChatRoomConsumer, NotificationConsumer
+
+
+class DatabaseUpdateConsumer:
+    pass
+
 
 websocket_urlpatterns = [
-    path("<chat_uuid>", ChatRoomConsumer.as_asgi()),
     re_path(r'ws/chat/(?P<chat_uuid>[\w-]+)/$', ChatRoomConsumer.as_asgi()),
+    path('ws/notify/', NotificationConsumer.as_asgi()),
 ]

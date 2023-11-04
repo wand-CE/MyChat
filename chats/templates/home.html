@@ -9,11 +9,11 @@
 
 {% if user.is_authenticated %}
 {% block content %}
-<div class="container mt-5">
+<div class="container-fluid mt-5">
     <div class="row">
         <div class="col-md-4">
             <div class="list-group" id="contact_and_search">
-                <div class="input-group border shadow search-bar mb-1">
+                <div class="input-group border shadow search-bar mb-1">                    
                     <input
                             type="text"
                             class="form-control border-0 shadow-none"
@@ -41,7 +41,7 @@
                 </a>                
                 {% endfor %}
                   <!-- TEMPORARIO -->
-                <div id="temp_test" class="border p-5 bg-dark"></div>
+                <div id="temp_test"></div>
             </div>
         </div>
         <div class="col-md-8">

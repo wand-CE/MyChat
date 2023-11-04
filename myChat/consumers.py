@@ -1,7 +1,14 @@
 import json
+
+from asgiref.sync import async_to_sync
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
+from channels.db import database_sync_to_async
+from channels.layers import get_channel_layer
+
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from chats.models import Conversation, Message, Profile
 
@@ -35,14 +42,14 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(
             self.chat_group_name,
             {
-                'type': 'sendMessage',
+                'type': 'send_message',
                 'message': message,
                 'user_id': user_id,
                 'chat_uuid': chat_uuid,
             }
         )
 
-    async def sendMessage(self, event):
+    async def send_message(self, event):
         message = event["message"]
         user_id = event["user_id"]
         await self.send(text_data=json.dumps({
@@ -50,7 +57,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             "user_id": user_id,
         }))
 
-    @sync_to_async
+    @database_sync_to_async
     def save_message(self, message, user_id, chat_uuid):
         print(user_id, chat_uuid, "----------------------")
         user = User.objects.get(id=user_id)
@@ -58,3 +65,65 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         chat = Conversation.objects.get(uuid=chat_uuid)
 
         Message.objects.create(sender=user_profile, content=message, conversation_id=chat.id)
+
+
+class NotificationConsumer(AsyncWebsocketConsumer):
+
+    async def connect(self):
+        self.user = self.scope['user']
+        await self.accept() if not self.user.is_anonymous else await self.close()
+        self.chat_group_name = 'notifications'
+
+        await self.channel_layer.group_add(
+            self.chat_group_name,
+            self.channel_name
+        )
+
+    async def disconnect(self, close_code):
+        print('foi desconectado')
+
+    async def notify_users(self, event):
+        await self.search_participants(event['chat_uuid'])
+        print('ENTROU')
+
+    @database_sync_to_async
+    def search_profile(self, profile_id):
+        try:
+            return Profile.objects.get(user_id=profile_id).id
+        except ObjectDoesNotExist:
+            return None
+
+    @database_sync_to_async
+    def search_participants(self, chat_id):
+        try:
+            for participant in Conversation.objects.get(uuid=chat_id).participants.all():
+                print(participant)
+            return Conversation.objects.get(uuid=chat_id).participants
+        except ObjectDoesNotExist:
+            return None
+
+    """
+    async def receive(self, text_data):
+    """
+
+
+
+@receiver(post_save, sender=Message)
+def message_post_save(sender, instance, **kwargs):
+    # Extraia os detalhes da mensagem
+    message = {
+        "message": instance.content,
+        "user_id": instance.sender.user.id,
+        "chat_uuid": instance.conversation.uuid,
+    }
+
+    # Envie a notificação para o grupo de chat correspondente
+    channel_layer = get_channel_layer()
+    print(*message)
+    async_to_sync(channel_layer.group_send)(
+        'notifications',
+        {
+            "type": "notify_users",
+            **message,
+        }
+    )
