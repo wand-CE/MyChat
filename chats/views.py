@@ -15,6 +15,7 @@ class ChatView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = Profile.objects.get(user_id=self.request.user.id)
+        context['current_profile_id'] = user.id
         context['contacts'] = Contact.objects.filter(user_id=user.id)
 
         return context

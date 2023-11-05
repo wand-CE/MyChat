@@ -1,14 +1,30 @@
 const chatbox = document.querySelector("#chat-content");
 const messages = document.querySelector("#messages");
 
-const notifySocket = new WebSocket(`ws://${window.location.host}/ws/notify/`);
+const current_user_id =
+  document.getElementById("profile_id").dataset.profile_id;
+
+document.getElementById("profile_id").remove();
+
+const notifySocket = new WebSocket(
+  `ws://${window.location.host}/ws/notify/${current_user_id}`
+);
 
 notifySocket.onmessage = function (event) {
   var data = JSON.parse(event.data);
-  if (data.type === "message_updated") {
-    // Tratar a notificação de atualização de mensagem
-    console.log("Mensagem atualizada para a conversa: " + data.chat_uuid);
-    // Atualizar a interface do usuário, por exemplo, carregar as mensagens atualizadas da conversa
+  console.log(data);
+  if (data.type === "notify_user") {
+    const element = document.querySelector(
+      `[data-contact_id="${data.user_id}"]`
+    );
+
+    if (
+      !element.className.includes("active-chat") &&
+      !element.querySelector("span.notification")
+    ) {
+      element.innerHTML += '<span class="notification"></span>';
+      console.log("Mensagem atualizada para a conversa: " + data.chat_uuid);
+    }
   }
 };
 
@@ -20,7 +36,6 @@ function scrollToBottom() {
 
 scrollToBottom();
 const csrftoken = JSON.parse(document.getElementById("csrf_token").textContent);
-let current_user_id;
 
 document.addEventListener("DOMContentLoaded", () =>
   document.getElementById("csrf_token").remove()
@@ -92,14 +107,12 @@ function claim_websocket(contact_id) {
           chatSocket.send(
             JSON.stringify({
               message: messageInput,
-              user_id: data_file["current_user_id"],
+              user_id: current_user_id,
               chat_uuid: data_file["chat_uuid"],
             })
           );
         }
       };
-
-      current_user_id = data_file["current_user_id"];
 
       chatSocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
@@ -156,6 +169,13 @@ document.addEventListener("DOMContentLoaded", function () {
   chatItems.forEach((item) => {
     item.addEventListener("click", function () {
       chatItems.forEach((chat) => chat.classList.remove("active-chat"));
+      if (item.innerHTML.includes('class="notification"')) {
+        item.childNodes;
+      }
+      let notification = item.querySelector("span.notification");
+
+      notification ? notification.remove() : "";
+
       item.classList.add("active-chat");
     });
   });
