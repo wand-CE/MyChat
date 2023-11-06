@@ -1,8 +1,13 @@
 const chatbox = document.querySelector("#chat-content");
 const messages = document.querySelector("#messages");
 
-const current_user_id =
-  document.getElementById("profile_id").dataset.profile_id;
+const current_chat = document.getElementById("current_chat");
+const current_chat_name = current_chat.querySelector("#current_chat_name");
+const current_chat_img = current_chat.querySelector("img");
+
+const current_user_id = parseInt(
+  document.getElementById("profile_id").dataset.profile_id
+);
 
 document.getElementById("profile_id").remove();
 
@@ -14,9 +19,7 @@ notifySocket.onmessage = function (event) {
   var data = JSON.parse(event.data);
   console.log(data);
   if (data.type === "notify_user") {
-    const element = document.querySelector(
-      `[data-contact_id="${data.user_id}"]`
-    );
+    const element = document.querySelector(`[data-chat_id="${data.user_id}"]`);
 
     if (
       !element.className.includes("active-chat") &&
@@ -25,6 +28,8 @@ notifySocket.onmessage = function (event) {
       element.innerHTML += '<span class="notification"></span>';
       console.log("Mensagem atualizada para a conversa: " + data.chat_uuid);
     }
+
+    element.querySelector(".last_message").innerHTML = data.message;
   }
 };
 
@@ -41,12 +46,12 @@ document.addEventListener("DOMContentLoaded", () =>
   document.getElementById("csrf_token").remove()
 );
 
-function claim_websocket(contact_id) {
+function claim_websocket(chat_id) {
   fetch("/return_chat/", {
     method: "POST",
     headers: { "X-CSRFToken": csrftoken },
     mode: "same-origin",
-    body: JSON.stringify({ contact_id: contact_id }),
+    body: JSON.stringify({ chat_id: chat_id }),
   })
     .then((response) => {
       if (response.ok) {
@@ -80,7 +85,7 @@ function claim_websocket(contact_id) {
             throw new Error(response.status);
           })
           .then((data) => {
-            data["messages"].forEach((element) => {
+            data.messages.forEach((element) => {
               populate_messages(element[0], element[1]);
             });
           });
@@ -98,8 +103,9 @@ function claim_websocket(contact_id) {
         }
       };
 
-      sendButton.onclick = function (e) {
-        let messageInput = document.querySelector("#my_input").value;
+      sendButton.onclick = () => {
+        const messageInput = document.querySelector("#my_input").value;
+        document.querySelector("#my_input").value = "";
 
         if (messageInput.length == 0) {
           alert("Escreva algo!");
@@ -116,6 +122,11 @@ function claim_websocket(contact_id) {
 
       chatSocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
+        if (data.user_id == current_user_id) {
+          document
+            .querySelector(".active-chat")
+            .querySelector(".last_message").innerHTML = data.message;
+        }
         populate_messages(data.user_id, data.message);
       };
     })
@@ -125,16 +136,17 @@ function claim_websocket(contact_id) {
 }
 
 document
-  .querySelector("#contact_and_search")
+  .querySelector("#chat_and_search")
   .addEventListener("click", (event) => {
-    if (
-      event.target.classList.contains("chat-item") ||
-      event.target.parentElement.classList.contains("chat-item")
-    ) {
-      const contact_id = event.target.dataset.contact_id
-        ? event.target.dataset.contact_id
-        : event.target.parentElement.dataset.contact_id;
-      claim_websocket(contact_id);
+    const chatItem = event.target.closest(".chat-item");
+
+    if (chatItem) {
+      claim_websocket(chatItem.dataset.chat_id);
+      current_chat_img.src = chatItem.querySelector("img").src;
+      current_chat_name.innerHTML =
+        chatItem.querySelector(".chat_name").innerHTML;
+      current_chat.classList.remove("d-none");
+      current_chat.classList.add("d-flex");
     }
   });
 
@@ -148,7 +160,6 @@ function populate_messages(user_id, message) {
   div.appendChild(div_child);
 
   div.classList.add("d-flex", "mb-2");
-
   if (user_id === current_user_id) {
     div.classList.add("justify-content-end");
     div_child.classList.add("bg-primary");
@@ -157,13 +168,12 @@ function populate_messages(user_id, message) {
     div_child.classList.add("bg-secondary");
   }
 
-  document.querySelector("#my_input").value = "";
   document.getElementById("sendMessage").className = "d-none";
   messages.appendChild(div);
   scrollToBottom();
 }
 
-//Muda a cor do contato selecionado
+//change the color of selected chat
 document.addEventListener("DOMContentLoaded", function () {
   let chatItems = document.querySelectorAll(".chat-item");
   chatItems.forEach((item) => {
@@ -182,7 +192,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 //temporario
-const contacts = document.getElementById("contact_and_search");
+const chats = document.getElementById("chat_and_search");
 
 const search_input = document.getElementById("search_input");
 const searchResults = document.getElementById("temp_test");
@@ -213,7 +223,7 @@ search_input.addEventListener("input", () => {
             "align-items-center",
             "chat-item"
           );
-          element.dataset.contact_id = result.id;
+          element.dataset.chat_id = result.id;
 
           let profile_photo = document.createElement("img");
           profile_photo.className = "mr-3 rounded-circle";

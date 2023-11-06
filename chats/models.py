@@ -65,7 +65,7 @@ class Contact(models.Model):
     def clean(self):
         try:
             if self.friend == self.user:
-                raise ValidationError('Erro ao adicionar contato, campos devem ser diferentes')
+                raise ValidationError('fields friend and user must be different')
         except ObjectDoesNotExist:
             return False
         return True

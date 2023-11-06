@@ -13,7 +13,7 @@
 <div class="container-fluid mt-2">
     <div class="row no-gutters">
         <div class="col-md-4">
-            <div class="list-group" id="contact_and_search">
+            <div class="list-group" id="chat_and_search">
                 <div class="input-group border shadow search-bar mb-1">                    
                     <input
                             type="text"
@@ -29,17 +29,19 @@
                         </span>
                     </div>
                 </div>
-                {% for contact in contacts %}
+                {% for chat in chats %}
                 <div
                         class="list-group-item list-group-item-action d-flex align-items-center chat-item"
-                        data-contact_id="{{ contact.friend.id }}"
+                        data-chat_id="{{ chat.chat.id }}"
                 >
                     <img
                             class="mr-3 rounded-circle"
-                            src="{{ contact.friend.photo.url }}"
+                            src="{{ chat.chat.photo.url }}"
                     />
-                    <div class="contact_name">{{ contact.friend.name }}</div>
-                    
+                    <div>
+                    <div class="chat_name h6">{{ chat.chat.name }}</div>
+                    <div class="last_message">{{ chat.last_message }}</div>
+                    </div>
                     
                 </div>                
                 {% endfor %}
@@ -49,6 +51,20 @@
         </div>
         <div class="col-md-8">
             <div class="card">
+                    <div
+                    class="list-group-item d-none"
+                    id="current_chat"
+                    >
+                        <img
+                                class="mr-3 rounded-circle"
+                                src="/media/profile_photos/defaultProfile.png"
+                                alt="eu"
+                        />
+                        <div>
+                            <div class="h6 mb-0" id="current_chat_name">ATUAL</div>
+                            <div>Status</div>
+                        </div>
+                </div>
                 <div
                         class="card-body"
                         id="chat-content"

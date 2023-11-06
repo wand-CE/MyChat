@@ -63,6 +63,11 @@
   position: absolute;
 }
 
-.contact_name {
+.chat_name {
   overflow: hidden;
+  color: black;
+}
+
+#current_chat img {
+  height: 40px;
 }
