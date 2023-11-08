@@ -40,7 +40,7 @@ class SearchView(LoginRequiredMixin, View):
         current_user = request.user
         searched = request.GET.get('searched')
         users = User.objects.filter(
-            Q(username__contains=searched) & ~Q(id=current_user.id)
+            Q(username__icontains=searched) & ~Q(id=current_user.id)
         )
 
         profiles = [Profile.objects.get(user=user) for user in users]

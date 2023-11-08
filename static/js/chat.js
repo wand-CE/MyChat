@@ -6,6 +6,8 @@ const status_user = document.getElementById("status");
 //temporario
 const chat_and_search = document.getElementById("chat_and_search");
 
+const chat_list = document.getElementById("chat-list");
+
 const current_chat = document.getElementById("current_chat");
 const current_chat_name = current_chat.querySelector("#current_chat_name");
 const current_chat_img = current_chat.querySelector("img");
@@ -218,22 +220,24 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 const search_input = document.getElementById("search_input");
-const searchResults = document.getElementById("temp_test");
+const divResults = document.createElement("div");
 
-// Simula a busca e exibe resultados temporariamente
 search_input.addEventListener("input", () => {
   const query = search_input.value;
   if (query.trim() === "") {
-    searchResults.style.display = "none";
+    chat_list.style.display = "block";
     return;
   }
+  chat_list.style.display = "none";
+  chat_and_search.appendChild(divResults);
+
   fetch(`/search_page?searched=${search_input.value}`)
     .then((response) =>
       response.ok ? response.json() : new Error(response.status)
     )
     .then((data) => {
       const results = data.profiles;
-      searchResults.innerHTML = "";
+      divResults.innerHTML = "";
 
       if (results.length) {
         results.forEach((result) => {
@@ -255,7 +259,7 @@ search_input.addEventListener("input", () => {
           element.appendChild(profile_photo);
           element.innerHTML += result.name;
 
-          searchResults.appendChild(element);
+          divResults.appendChild(element);
         });
       } else {
         const element = document.createElement("div");
@@ -269,14 +273,7 @@ search_input.addEventListener("input", () => {
 
         element.innerHTML += "Usuário não encontrado";
 
-        searchResults.appendChild(element);
+        divResults.appendChild(element);
       }
-      searchResults.style.display = "block";
     });
-});
-
-document.addEventListener("click", (event) => {
-  if (!searchResults.contains(event.target) && event.target !== search_input) {
-    searchResults.style.display = "none";
-  }
 });

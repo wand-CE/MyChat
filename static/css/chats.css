@@ -14,22 +14,19 @@
   background-color: aliceblue;
   height: 400px;
   overflow-y: auto;
+  scrollbar-width: thin;
 }
 
-#chat-content::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 5px;
 }
 
-#chat-content::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
   background: #f4f4f4;
 }
 
-#chat-content::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background-color: #002f5d;
-}
-
-#chat-content {
-  scrollbar-width: thin;
 }
 
 .chat-item img {
@@ -84,4 +81,21 @@
 
 .messagePreview {
   width: 70%;
+}
+.block-chats {
+  overflow: auto;
+  max-height: 29em;
+}
+
+.search-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+@media (max-width: 767px) {
+  .block-chats {
+    max-height: 12em;
+    height: 12em;
+  }
 }
