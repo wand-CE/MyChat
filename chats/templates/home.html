@@ -14,7 +14,7 @@
     <div class="row no-gutters">
         <div class="col-md-4">
             <div class="list-group" id="chat_and_search">
-                <div class="input-group border shadow search-bar mb-1">                    
+                <div class="input-group border shadow search-bar mb-1">
                     <input
                             type="text"
                             class="form-control border-0 shadow-none"
@@ -38,12 +38,12 @@
                             class="mr-3 rounded-circle"
                             src="{{ chat.chat.photo.url }}"
                     />
-                    <div>
-                    <div class="chat_name h6">{{ chat.chat.name }}</div>
-                    <div class="last_message">{{ chat.last_message }}</div>
+                    <div class="messagePreview">
+                        <div class="chat_name h6">{{ chat.chat.name }}</div>
+                        <div class="last_message">{{ chat.last_message }}</div>
                     </div>
-                    
-                </div>                
+
+                </div>
                 {% endfor %}
                   <!-- TEMPORARIO -->
                 <div id="temp_test"></div>
@@ -61,8 +61,8 @@
                                 alt="eu"
                         />
                         <div>
-                            <div class="h6 mb-0" id="current_chat_name">ATUAL</div>
-                            <div>Status</div>
+                            <div class="h6 mb-0" id="current_chat_name"></div>
+                            <div id="status"></div>
                         </div>
                 </div>
                 <div

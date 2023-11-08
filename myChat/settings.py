@@ -113,6 +113,10 @@ DATABASES = {
         'PORT': '3306',
         'USER': env('DATABASE_USER'),
         'PASSWORD': env('DATABASE_PASS'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
+
     }
 }
 
@@ -143,7 +147,7 @@ TIME_ZONE = 'America/Porto_Velho'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/

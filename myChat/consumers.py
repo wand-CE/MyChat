@@ -1,4 +1,5 @@
 import json
+import profile
 
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -64,10 +65,14 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         user_profile = Profile.objects.get(id=user_id)
         chat = Conversation.objects.get(uuid=chat_uuid)
 
-        Message.objects.create(sender=user_profile, content=message, conversation_id=chat.id)
+        Message.objects.create(sender=user_profile,
+                               content=message, conversation_id=chat.id)
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):
+    list_of_groups = {}
+
+    current_chat_friend = None
 
     async def connect(self):
         self.profile_id = self.scope['url_route']['kwargs']['profile_id']
@@ -83,6 +88,16 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.close()
+
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        self.current_chat_friend = text_data_json['friend_id']
+
+        self.list_of_groups[self.chat_group_name] = self.current_chat_friend
+
+    async def change_friend_status(self, event):
+        if self.current_chat_friend == event['friend']:
+            await self.send(text_data=json.dumps(event))
 
     async def notify_user(self, event):
         chat_uuid = event['chat_uuid']
@@ -129,3 +144,19 @@ def message_post_save(sender, instance, **kwargs):
                 **message,
             }
         )
+
+
+@receiver(post_save, sender=Profile)
+def user_change_status(sender, instance, **kwargs):
+    channel_layer = get_channel_layer()
+    print(NotificationConsumer.list_of_groups.items())
+    for group, friend in NotificationConsumer.list_of_groups.items():
+        if friend == instance.id:
+            async_to_sync(channel_layer.group_send)(
+                group,
+                {
+                    "type": "change_friend_status",
+                    "friend": instance.id,
+                    "status": instance.status_display(),
+                }
+            )
