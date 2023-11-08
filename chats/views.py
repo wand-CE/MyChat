@@ -86,11 +86,16 @@ class ReturnChat(LoginRequiredMixin, View):
 
 class GetOldMessages(LoginRequiredMixin, View):
     def post(self, request):
-        chat_uuid = json.loads(request.body)
+        data = json.loads(request.body)
+        chat_uuid = data["chat_uuid"]
+        user = Profile.objects.get(id=data["current_user_id"])
+
         conversation = Conversation.objects.get(uuid=chat_uuid)
+        friend_profile = conversation.participants.get(~Q(id=user.id))
+
         messages = Message.objects.filter(conversation=conversation.id)
 
         messages = [[message.sender.id, message.content]
                     for message in messages]
 
-        return JsonResponse({'messages': messages})
+        return JsonResponse({'messages': messages, "friend_status": friend_profile.status_display()})

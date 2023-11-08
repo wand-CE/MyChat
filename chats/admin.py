@@ -14,7 +14,7 @@ class ConversationAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'status']
+    list_display = ['user', 'is_online']
 
 
 @admin.register(Contact)

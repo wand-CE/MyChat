@@ -9,14 +9,19 @@ import uuid
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     photo = StdImageField(upload_to='profile_photos',
-                          variations={'thumb': {'width': 600, 'height': 600, 'crop': True}},
+                          variations={'thumb': {'width': 600,
+                                                'height': 600, 'crop': True}},
                           default='profile_photos/defaultProfile.png')
-    status = models.CharField(max_length=50, choices=[(
-        'online', 'Online'), ('offline', 'Offline')], default='offline')
+    is_online = models.BooleanField(default=False, verbose_name='online')
+    last_activity = models.DateTimeField(blank=True, auto_now_add=True)
 
     @property
     def name(self):
         return self.user.username
+
+    def status_display(self):
+        return "Online" if self.is_online else f"Visto por ultimo as {self.last_activity.strftime('%H:%M')}" \
+                                               f" do dia {self.last_activity.strftime('%d/%m')}"
 
     class Meta:
         verbose_name = 'Profile'
@@ -29,7 +34,8 @@ class Profile(models.Model):
 class Conversation(models.Model):
     participants = models.ManyToManyField(
         Profile, related_name='conversations')
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, null=False)
+    uuid = models.UUIDField(
+        default=uuid.uuid4, editable=False, unique=True, null=False)
 
     class Meta:
         verbose_name = 'Conversation'
@@ -38,10 +44,16 @@ class Conversation(models.Model):
     def __str__(self):
         return f'Chat: {self.uuid}'
 
+    def get_last_message(self):
+        last_message = self.messages.order_by('-timestamp').first()
+        return last_message
+
 
 class Message(models.Model):
-    sender = models.ForeignKey(Profile, related_name='sent_messages', on_delete=models.CASCADE, editable=False)
-    conversation = models.ForeignKey(Conversation, related_name='messages', on_delete=models.CASCADE, editable=False)
+    sender = models.ForeignKey(
+        Profile, related_name='sent_messages', on_delete=models.CASCADE, editable=False)
+    conversation = models.ForeignKey(
+        Conversation, related_name='messages', on_delete=models.CASCADE, editable=False)
     content = models.TextField(editable=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
@@ -54,8 +66,10 @@ class Message(models.Model):
 
 
 class Contact(models.Model):
-    user = models.ForeignKey(Profile, related_name='contacts', on_delete=models.CASCADE)
-    friend = models.ForeignKey(Profile, related_name='friends', on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        Profile, related_name='contacts', on_delete=models.CASCADE)
+    friend = models.ForeignKey(
+        Profile, related_name='friends', on_delete=models.CASCADE)
     added_on = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -65,18 +79,21 @@ class Contact(models.Model):
     def clean(self):
         try:
             if self.friend == self.user:
-                raise ValidationError('fields friend and user must be different')
+                raise ValidationError(
+                    'fields friend and user must be different')
         except ObjectDoesNotExist:
             return False
         return True
 
     def save(self, *args, **kwargs):
         if self.clean():
-            relation_exists = Contact.objects.filter(user=self.user, friend=self.friend).exists()
+            relation_exists = Contact.objects.filter(
+                user=self.user, friend=self.friend).exists()
             if not relation_exists:
                 super(Contact, self).save(*args, **kwargs)
 
-            inverse_relation_exists = Contact.objects.filter(user=self.friend, friend=self.user).exists()
+            inverse_relation_exists = Contact.objects.filter(
+                user=self.friend, friend=self.user).exists()
             if not inverse_relation_exists:
                 Contact.objects.create(user=self.friend, friend=self.user)
 
