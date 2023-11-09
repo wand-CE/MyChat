@@ -17,6 +17,10 @@
   scrollbar-width: thin;
 }
 
+#chat-content {
+  padding: 1.25em;
+}
+
 *::-webkit-scrollbar {
   width: 5px;
 }
@@ -63,6 +67,15 @@
   position: absolute;
 }
 
+.online_status {
+  background-color: green;
+  border-radius: 50%;
+  height: 10px;
+  width: 10px;
+  margin: 0.4em 0.5em 0 0;
+  display: none;
+}
+
 .chat_name {
   overflow: hidden;
   color: black;
@@ -70,6 +83,12 @@
 
 #current_chat img {
   height: 40px;
+}
+
+#current_chat {
+  position: sticky;
+  top: -21px;
+  margin: -1.25em -1.25em 2em -1.25em;
 }
 
 .last_message {
@@ -85,6 +104,7 @@
 .block-chats {
   overflow: auto;
   max-height: 29em;
+  background-color: white;
 }
 
 .search-bar {

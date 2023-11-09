@@ -39,6 +39,8 @@ notifySocket.onmessage = function (event) {
 
     element.querySelector(".last_message").innerHTML = data.message;
   } else if (data.type === "change_friend_status") {
+    document.querySelector(".online_status").style.display =
+      data.status === "Online" ? "flex" : "none";
     status_user.innerHTML = data.status;
   }
 };
@@ -98,7 +100,10 @@ function claim_websocket(chat_id) {
             throw new Error(response.status);
           })
           .then((data) => {
+            document.querySelector(".online_status").style.display =
+              data.friend_status === "Online" ? "flex" : "none";
             status_user.innerHTML = data.friend_status;
+
             data.messages.forEach((element) => {
               populate_messages(element[0], element[1]);
             });
@@ -226,6 +231,7 @@ search_input.addEventListener("input", () => {
   const query = search_input.value;
   if (query.trim() === "") {
     chat_list.style.display = "block";
+    chat_and_search.removeChild(divResults);
     return;
   }
   chat_list.style.display = "none";
@@ -241,7 +247,7 @@ search_input.addEventListener("input", () => {
 
       if (results.length) {
         results.forEach((result) => {
-          const element = document.createElement("a");
+          const element = document.createElement("div");
 
           element.classList.add(
             "list-group-item",
@@ -257,7 +263,9 @@ search_input.addEventListener("input", () => {
           profile_photo.src = result.photo;
 
           element.appendChild(profile_photo);
-          element.innerHTML += result.name;
+          element.innerHTML += `<div class="messagePreview">
+          <div class="chat_name h6">${result.name}</div>
+          </div>`;
 
           divResults.appendChild(element);
         });
