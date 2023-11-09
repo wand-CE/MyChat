@@ -39,13 +39,14 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         user_id = text_data_json['user_id']
         chat_uuid = text_data_json["chat_uuid"]
 
-        await self.save_message(message, user_id, chat_uuid)
+        message = await self.save_message(message, user_id, chat_uuid)
 
         await self.channel_layer.group_send(
             self.chat_group_name,
             {
                 'type': 'send_message',
-                'message': message,
+                'message': message.content,
+                "message_time": message.timestamp.strftime("%d/%m/%Y|%H:%M"),
                 'user_id': user_id,
                 'chat_uuid': chat_uuid,
             }
@@ -54,9 +55,11 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
     async def send_message(self, event):
         message = event["message"]
         user_id = event["user_id"]
+        message_time = event["message_time"]
         await self.send(text_data=json.dumps({
-            "message": message,
             "user_id": user_id,
+            "message": message,
+            "message_time": message_time,
         }))
 
     @database_sync_to_async
@@ -65,8 +68,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         user_profile = Profile.objects.get(id=user_id)
         chat = Conversation.objects.get(uuid=chat_uuid)
 
-        Message.objects.create(sender=user_profile,
-                               content=message, conversation_id=chat.id)
+        return Message.objects.create(sender=user_profile, content=message, conversation_id=chat.id)
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):
@@ -103,18 +105,20 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         chat_uuid = event['chat_uuid']
         sender_id = event['profile_id']
         message = event["message"]
-        type = event['type']
+        message_time = event["message_time"],
+        type_event = event['type']
 
         recipients = await self.get_recipients(chat_uuid, sender_id)
 
         async for recipient in recipients:
             if recipient.id != sender_id:
-                await self.send_message(type, message, recipient.id, sender_id, str(chat_uuid))
+                await self.send_message(type_event, message, message_time, recipient.id, sender_id, str(chat_uuid))
 
-    async def send_message(self, type, message, recipient, user_id, chat_uuid):
+    async def send_message(self, type_event, message, message_time, recipient, user_id, chat_uuid):
         await self.send(text_data=json.dumps({
-            "type": type,
+            "type": type_event,
             "message": message,
+            "message_time": message_time,
             "user_id": user_id,
             "recipient_id": recipient,
             "chat_uuid": chat_uuid,
@@ -130,6 +134,7 @@ def message_post_save(sender, instance, **kwargs):
     # Extract details of message
     message = {
         "message": instance.content,
+        "message_time": instance.timestamp,
         "profile_id": instance.sender.id,
         "chat_uuid": instance.conversation.uuid,
     }

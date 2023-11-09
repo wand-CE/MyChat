@@ -105,7 +105,7 @@ function claim_websocket(chat_id) {
             status_user.innerHTML = data.friend_status;
 
             data.messages.forEach((element) => {
-              populate_messages(element[0], element[1]);
+              populate_messages(element);
             });
           });
       };
@@ -146,7 +146,8 @@ function claim_websocket(chat_id) {
           active_chat.querySelector(".last_message").innerHTML = data.message;
         }
         chat_and_search.insertBefore(active_chat, chat_and_search.children[1]);
-        populate_messages(data.user_id, data.message);
+
+        populate_messages([data.user_id, data.message, data.message_time]);
       };
     })
     .catch((error) => {
@@ -154,7 +155,14 @@ function claim_websocket(chat_id) {
     });
 }
 
+let date = new Date();
+let todaysDate = `${date.getDate()}${date.getMonth() + 1}${date.getFullYear()}`;
+
+let lastDate = 0;
+
 chat_and_search.addEventListener("click", (event) => {
+  lastDate = 0;
+
   const chatItem = event.target.closest(".chat-item");
 
   if (chatItem) {
@@ -167,7 +175,20 @@ chat_and_search.addEventListener("click", (event) => {
   }
 });
 
-function populate_messages(user_id, message) {
+function populate_messages([user_id, message, message_time]) {
+  const time = message_time.split("|"); //split the message in date and hour
+  const date = parseInt(time[0].replaceAll("/", "")); //transform to date to Int
+
+  if (date > lastDate) {
+    lastDate = date;
+    let dateDiv = document.createElement("div");
+    dateDiv.className = "d-flex m-2 justify-content-center";
+
+    dateDiv.innerHTML = `<div class='px-2 bg-dark text-light rounded'>
+      ${date === parseInt(todaysDate) ? "Hoje" : time[0]} </div>`;
+    messages.appendChild(dateDiv);
+  }
+
   let div = document.createElement("div");
   let div_child = document.createElement("div");
 
@@ -181,7 +202,8 @@ function populate_messages(user_id, message) {
 
   div_child.style.minWidth = "60px";
 
-  div_child.innerHTML = `<span class="mr-4" style='font-size:14px'>${message}</span><span class="ml-auto" style='font-size:11px'>00:05</span>`;
+  div_child.innerHTML = `<span class="mr-4" style='font-size:14px'>${message}</span>
+                         <span class="ml-auto" style='font-size:11px'>${time[1]}</span>`;
   div.appendChild(div_child);
 
   div.classList.add("d-flex", "mb-2");

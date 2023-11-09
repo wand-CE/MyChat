@@ -1,4 +1,5 @@
 import json
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Max
@@ -95,7 +96,7 @@ class GetOldMessages(LoginRequiredMixin, View):
 
         messages = Message.objects.filter(conversation=conversation.id)
 
-        messages = [[message.sender.id, message.content]
-                    for message in messages]
+        messages = [[message.sender.id, message.content,
+                     message.timestamp.strftime("%d/%m/%Y|%H:%M")] for message in messages]
 
         return JsonResponse({'messages': messages, "friend_status": friend_profile.status_display()})
