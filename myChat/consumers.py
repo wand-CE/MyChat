@@ -46,7 +46,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             {
                 'type': 'send_message',
                 'message': message.content,
-                "message_time": message.timestamp.strftime("%d/%m/%Y|%H:%M"),
+                "message_time": message.getMessageTime(),
                 'user_id': user_id,
                 'chat_uuid': chat_uuid,
             }
@@ -109,24 +109,46 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         type_event = event['type']
 
         recipients = await self.get_recipients(chat_uuid, sender_id)
+        sender = await self.get_sender_data(sender_id)
 
         async for recipient in recipients:
             if recipient.id != sender_id:
-                await self.send_message(type_event, message, message_time, recipient.id, sender_id, str(chat_uuid))
+                await self.send_message(
+                    type_event,
+                    message,
+                    message_time,
+                    recipient,
+                    sender,
+                    str(chat_uuid)
+                )
 
-    async def send_message(self, type_event, message, message_time, recipient, user_id, chat_uuid):
+    async def send_message(self, type_event, message, message_time, recipient, sender, chat_uuid):
+        sync_to_async(print)(recipient)
         await self.send(text_data=json.dumps({
             "type": type_event,
             "message": message,
             "message_time": message_time,
-            "user_id": user_id,
-            "recipient_id": recipient,
+            "sender": await self.get_profile_data(sender),
+            "recipient": await self.get_profile_data(recipient),
             "chat_uuid": chat_uuid,
         }))
 
     @database_sync_to_async
+    def get_sender_data(self, sender_id):
+        return Profile.objects.get(id=sender_id)
+
+    @database_sync_to_async
     def get_recipients(self, chat_uuid, sender_id):
         return Conversation.objects.get(uuid=chat_uuid).participants.filter(~Q(id=sender_id))
+
+    @database_sync_to_async
+    def get_profile_data(self, profile: Profile):
+        # make to accept only Profile object
+        return {
+            'id': profile.id,
+            'name': profile.name,
+            'photo': profile.photo.url,
+        }
 
 
 @receiver(post_save, sender=Message)
@@ -134,10 +156,11 @@ def message_post_save(sender, instance, **kwargs):
     # Extract details of message
     message = {
         "message": instance.content,
-        "message_time": instance.timestamp,
+        "message_time": instance.getMessageTime(),
         "profile_id": instance.sender.id,
         "chat_uuid": instance.conversation.uuid,
     }
+
     chat_participants = Conversation.objects.get(uuid=instance.conversation.uuid).participants.filter(
         ~Q(id=message['profile_id']))
     for participant in chat_participants:

@@ -65,8 +65,8 @@ class ReturnChat(LoginRequiredMixin, View):
         try:
             data = json.loads(request.body)
 
-            user1 = Profile.objects.get(user=request.user.id)
-            user2 = Profile.objects.get(id=data.get('chat_id'))
+            user1 = Profile.objects.get(user=request.user)
+            user2 = Profile.objects.get(id=int(data.get('chat_id')))
 
             conversation = Conversation.objects.filter(
                 participants=user1).filter(participants=user2).first()

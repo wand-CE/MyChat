@@ -23,18 +23,25 @@ const notifySocket = new WebSocket(
 );
 
 notifySocket.onmessage = function (event) {
-  var data = JSON.parse(event.data);
+  let data = JSON.parse(event.data);
   if (data.type === "notify_user") {
-    const element = document.querySelector(`[data-chat_id="${data.user_id}"]`);
+    let chatProfile =
+      parseInt(data.sender.id) === current_user_id
+        ? data.recipient
+        : data.sender;
 
-    chat_and_search.insertBefore(element, chat_and_search.children[1]);
+    let element = document.querySelector(`[data-chat_id="${chatProfile.id}"]`);
+    if (!element) {
+      element = createChatElement(chatProfile, data.message);
+    }
+
+    chat_list.insertBefore(element, chat_list.children[0]);
 
     if (
       !element.className.includes("active-chat") &&
       !element.querySelector("span.notification")
     ) {
       element.innerHTML += '<span class="notification"></span>';
-      console.log("Mensagem atualizada para a conversa: " + data.chat_uuid);
     }
 
     element.querySelector(".last_message").innerHTML = data.message;
@@ -145,7 +152,7 @@ function claim_websocket(chat_id) {
         if (data.user_id == current_user_id) {
           active_chat.querySelector(".last_message").innerHTML = data.message;
         }
-        chat_and_search.insertBefore(active_chat, chat_and_search.children[1]);
+        chat_list.insertBefore(active_chat, chat_list.children[0]);
 
         populate_messages([data.user_id, data.message, data.message_time]);
       };
@@ -163,10 +170,47 @@ let lastDate = 0;
 chat_and_search.addEventListener("click", (event) => {
   lastDate = 0;
 
-  const chatItem = event.target.closest(".chat-item");
+  let chatItem = event.target.closest(".chat-item");
 
   if (chatItem) {
-    claim_websocket(chatItem.dataset.chat_id);
+    document.getElementById("sendMessage").className = "d-none";
+
+    let active_chat = document.querySelector(".active-chat");
+    let chatId = chatItem.dataset.chat_id;
+
+    if (chatItem.closest("#divResults")) {
+      let elementInList = chat_list.querySelector(`[data-chat_id='${chatId}']`);
+      if (!elementInList) {
+        chat_list.appendChild(chatItem);
+      } else {
+        chatItem = elementInList;
+      }
+      search_input.value = "";
+      chat_list.style.display = "block";
+    }
+
+    divResults.innerHTML = "";
+
+    if (active_chat) {
+      // the return stop the function case chatItem is already selected
+      if (chatId === active_chat.dataset.chat_id) return;
+      active_chat.classList.remove("active-chat");
+    }
+
+    let notification = chatItem.querySelector("span.notification");
+    if (notification) notification.remove(); // remove notification dot case it have
+
+    chatItem.classList.add("active-chat");
+
+    claim_websocket(chatId);
+
+    // this is temp while theres no group chats
+    notifySocket.send(
+      JSON.stringify({
+        friend_id: parseInt(chatId),
+      })
+    );
+
     current_chat_img.src = chatItem.querySelector("img").src;
     current_chat_name.innerHTML =
       chatItem.querySelector(".chat_name").innerHTML;
@@ -215,39 +259,12 @@ function populate_messages([user_id, message, message_time]) {
     div_child.classList.add("bg-secondary");
   }
 
-  document.getElementById("sendMessage").className = "d-none";
   messages.appendChild(div);
   scrollToBottom();
 }
 
-//change the color of selected chat
-document.addEventListener("DOMContentLoaded", function () {
-  let chatItems = document.querySelectorAll(".chat-item");
-  chatItems.forEach((item) => {
-    item.addEventListener("click", function () {
-      chatItems.forEach((chat) => chat.classList.remove("active-chat"));
-      if (item.innerHTML.includes('class="notification"')) {
-        item.childNodes;
-      }
-      let notification = item.querySelector("span.notification");
-
-      notification ? notification.remove() : "";
-
-      item.classList.add("active-chat");
-      //temporario enquanto só aceitam conversas privadas
-      notifySocket.send(
-        JSON.stringify({
-          friend_id: parseInt(
-            document.querySelector(".active-chat").dataset.chat_id
-          ),
-        })
-      );
-    });
-  });
-});
-
 const search_input = document.getElementById("search_input");
-const divResults = document.createElement("div");
+const divResults = document.getElementById("divResults");
 
 search_input.addEventListener("input", () => {
   const query = search_input.value;
@@ -286,7 +303,8 @@ search_input.addEventListener("input", () => {
 
           element.appendChild(profile_photo);
           element.innerHTML += `<div class="messagePreview">
-          <div class="chat_name h6">${result.name}</div>
+            <div class="chat_name h6">${result.name}</div>
+            <div class="last_message"></div>
           </div>`;
 
           divResults.appendChild(element);
@@ -307,3 +325,17 @@ search_input.addEventListener("input", () => {
       }
     });
 });
+
+function createChatElement(chatProfile, message) {
+  let element = document.createElement("div");
+
+  element.className =
+    "list-group-item list-group-item-action d-flex align-items-center chat-item";
+  element.dataset.chat_id = chatProfile.id;
+  element.innerHTML = `<img class="mr-3 rounded-circle" src="${chatProfile.photo}"/>
+                        <div class="messagePreview">
+                          <div class="chat_name h6">${chatProfile.name}</div>
+                          <div class="last_message">${message}</div>
+                        </div>`;
+  return element;
+}

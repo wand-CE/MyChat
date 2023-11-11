@@ -64,6 +64,9 @@ class Message(models.Model):
     def __str__(self):
         return f'Mensagem {self.conversation}'
 
+    def getMessageTime(self):
+        return self.timestamp.strftime("%d/%m/%Y|%H:%M")
+
 
 class Contact(models.Model):
     user = models.ForeignKey(
