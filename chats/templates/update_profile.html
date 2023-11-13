@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block head_title %} Editar Perfil {% endblock head_title %}
+{% block extra_head %}
+<style>
+    .negrito{
+        font-weight: bold;
+
+    }
+</style>
+{% endblock extra_head %}
+
+
+{% load bootstrap4 %}
+
+{% block content %}
+<div class="container-fluid d-flex justify-content-center mt-5">
+    <form class="shadow-lg col-md-4 bg-white rounded justify-content-center py-5" method="POST"
+          enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="text-center mb-3">
+            <img src="/media/{{ currentPhoto }}" alt="profile_photo"
+                 class="border border-primary rounded-circle bg-white w-25">
+        </div>
+
+        {% bootstrap_form form label_class='negrito' %}
+
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary btn-block">
+                Salvar
+            </button>
+        </div>
+
+        <div class="text-center">
+            <a href="{% url 'account_email' %}" class="btn btn-link ">
+                Alterar ou adicionar email
+            </a>
+            <br>
+            <a href="{% url 'account_change_password' %}" class="btn btn-link">
+                Alterar Senha
+            </a>
+
+        </div>
+    </form>
+
+</div>
+
+{% endblock content %}
+

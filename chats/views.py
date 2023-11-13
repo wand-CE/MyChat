@@ -4,10 +4,12 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Max
 
-from django.http import HttpResponseNotFound, JsonResponse
-from django.views.generic import TemplateView, View
+from django.http import HttpResponseNotFound, JsonResponse, Http404
+from django.urls import reverse_lazy
+from django.views.generic import TemplateView, View, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+from chats.forms import UpdateProfileForm
 from chats.models import Contact, Conversation, Message, Profile
 
 
@@ -19,8 +21,7 @@ class ChatView(LoginRequiredMixin, TemplateView):
         profile = Profile.objects.get(user_id=self.request.user.id)
         context['current_profile_id'] = profile.id
         context['chats'] = []
-        chats = Conversation.objects.filter(participants=profile).annotate(
-            last_message_timestamp=Max("messages__timestamp")).order_by("-last_message_timestamp")
+        chats = self.get_chats(profile)
         for chat in chats:
             # it's temp while the app only accepts individual chats
             try:
@@ -34,6 +35,10 @@ class ChatView(LoginRequiredMixin, TemplateView):
             })
 
         return context
+
+    def get_chats(self, profile):
+        return Conversation.objects.filter(participants=profile).annotate(
+            last_message_timestamp=Max("messages__timestamp")).order_by("-last_message_timestamp")
 
 
 class SearchView(LoginRequiredMixin, View):
@@ -100,3 +105,51 @@ class GetOldMessages(LoginRequiredMixin, View):
                      message.timestamp.strftime("%d/%m/%Y|%H:%M")] for message in messages]
 
         return JsonResponse({'messages': messages, "friend_status": friend_profile.status_display()})
+
+
+class UpdateProfile(LoginRequiredMixin, FormView):
+    template_name = 'update_profile.html'
+    form_class = UpdateProfileForm
+
+    success_url = reverse_lazy('profileSettings')
+
+    def get_object(self):
+        try:
+            return Profile.objects.get(user=self.request.user)
+        except Profile.DoesNotExist:
+            raise Http404("Perfil não existe")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['instance'] = self.get_object()
+        return kwargs
+
+    def get(self, request, *args, **kwargs):
+        profile = self.get_object()
+        form = self.form_class(initial={
+            'username': profile.user.username
+        }, instance=profile)
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def get_context_data(self, **kwargs):
+        profile = self.get_object()
+        context = super().get_context_data(**kwargs)
+
+        context['currentPhoto'] = profile.photo.thumb
+
+        return context
+
+    def form_valid(self, form):
+        user = User.objects.get(username=self.request.user)
+        user.username = self.request.POST.get('username')
+        user.save()
+
+        if self.request.FILES.get('photo', False):
+            profile = self.get_object()
+            profile.photo = self.request.FILES['photo']
+            profile.save()
+
+        return super(UpdateProfile, self).form_valid(form)
+
+    def form_invalid(self, form):
+        return super(UpdateProfile, self).form_invalid(form)

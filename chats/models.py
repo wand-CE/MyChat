@@ -11,7 +11,8 @@ class Profile(models.Model):
     photo = StdImageField(upload_to='profile_photos',
                           variations={'thumb': {'width': 600,
                                                 'height': 600, 'crop': True}},
-                          default='profile_photos/defaultProfile.png')
+                          default='profile_photos/defaultProfile.png',
+                          verbose_name='Foto de Perfil')
     is_online = models.BooleanField(default=False, verbose_name='online')
     last_activity = models.DateTimeField(blank=True, auto_now_add=True)
 
@@ -19,16 +20,19 @@ class Profile(models.Model):
     def name(self):
         return self.user.username
 
+    def get_last_activity(self):
+        return self.last_activity.strftime('%H:%M')
+
     def status_display(self):
-        return "Online" if self.is_online else f"Visto por ultimo as {self.last_activity.strftime('%H:%M')}" \
-                                               f" do dia {self.last_activity.strftime('%d/%m')}"
+        return "Online" if self.is_online else f"Visto por ultimo as {self.get_last_activity()}" \
+                                               f" do dia {self.get_last_activity()}"
 
     class Meta:
         verbose_name = 'Profile'
         verbose_name_plural = 'Profiles'
 
     def __str__(self):
-        return self.name
+        return f'Profile of {self.name}'
 
 
 class Conversation(models.Model):
