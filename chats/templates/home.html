@@ -41,6 +41,9 @@
                             <div class="chat_name h6">{{ chat.chat.name }}</div>
                             <div class="last_message">{{ chat.last_message }}</div>
                         </div>
+                        {% if not chat.status_message %}
+                        <span class="notification"></span>
+                        {% endif %}
 
                     </div>
                     {% endfor %}

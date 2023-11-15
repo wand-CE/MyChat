@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 from stdimage import StdImageField
 from django.contrib.auth.models import User
@@ -21,11 +22,14 @@ class Profile(models.Model):
         return self.user.username
 
     def get_last_activity(self):
-        return self.last_activity.strftime('%H:%M')
+        return {
+            'day': self.last_activity.strftime('%d/%m/%Y'),
+            'hour': self.last_activity.strftime('%H:%M')
+        }
 
     def status_display(self):
-        return "Online" if self.is_online else f"Visto por ultimo as {self.get_last_activity()}" \
-                                               f" do dia {self.get_last_activity()}"
+        return "Online" if self.is_online else f"Visto por ultimo as {self.get_last_activity()['hour']}" \
+                                               f" do dia {self.get_last_activity()['day']}"
 
     class Meta:
         verbose_name = 'Profile'
@@ -40,6 +44,8 @@ class Conversation(models.Model):
         Profile, related_name='conversations')
     uuid = models.UUIDField(
         default=uuid.uuid4, editable=False, unique=True, null=False)
+    is_group = models.BooleanField(
+        null=False, default=False, verbose_name='grupo')
 
     class Meta:
         verbose_name = 'Conversation'
@@ -70,6 +76,17 @@ class Message(models.Model):
 
     def getMessageTime(self):
         return self.timestamp.strftime("%d/%m/%Y|%H:%M")
+
+
+class MessageReadStatus(models.Model):
+    recipientProfile = models.ForeignKey(
+        Profile, on_delete=models.CASCADE, editable=False)
+    message = models.ForeignKey(
+        Message, related_name='read_status', on_delete=models.CASCADE, editable=False)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['recipientProfile', 'message']
 
 
 class Contact(models.Model):

@@ -1,9 +1,15 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.utils import timezone
 from django.contrib.auth.models import User
-from .models import Profile
+
+from myChat.consumers import NotificationConsumer
+from .models import Profile, Message, MessageReadStatus, Conversation
 
 
 # these signals make a profile for every user created
@@ -32,3 +38,54 @@ def user_logged_out_handler(sender, request, user, **kwargs):
     current_profile.is_online = False
     current_profile.last_activity = timezone.now()
     current_profile.save()
+
+
+# the signal below create a message_read object when a Message is created
+@receiver(post_save, sender=Message)
+def message_read(sender, instance, created, **kwargs):
+    if created:
+        try:
+            chat = Conversation.objects.get(pk=instance.conversation.id)
+            for participant in chat.participants.all():
+                if participant.id != instance.sender.id:
+                    MessageReadStatus.objects.create(recipientProfile=participant, message=instance)
+        except ObjectDoesNotExist:
+            pass
+
+
+@receiver(post_save, sender=Message)
+def message_post_save(sender, instance, **kwargs):
+    # Extract details of message
+    message = {
+        "message": instance.content,
+        "message_time": instance.getMessageTime(),
+        "profile_id": instance.sender.id,
+        "chat_uuid": instance.conversation.uuid,
+    }
+
+    chat_participants = Conversation.objects.get(uuid=instance.conversation.uuid).participants.filter(
+        ~Q(id=message['profile_id']))
+    for participant in chat_participants:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'notification_user{participant.id}',
+            {
+                "type": "notify_user",
+                **message,
+            }
+        )
+
+
+@receiver(post_save, sender=Profile)
+def user_change_status(sender, instance, **kwargs):
+    channel_layer = get_channel_layer()
+    for group, friend in NotificationConsumer.list_of_groups.items():
+        if friend == instance.id:
+            async_to_sync(channel_layer.group_send)(
+                group,
+                {
+                    "type": "change_friend_status",
+                    "friend": instance.id,
+                    "status": instance.status_display(),
+                }
+            )

@@ -1,18 +1,10 @@
 import json
-import profile
-
-from asgiref.sync import async_to_sync, sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from channels.layers import get_channel_layer
 
-from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
-from chats.models import Conversation, Message, Profile
+from chats.models import Conversation, Message, Profile, MessageReadStatus
 
 
 class ChatRoomConsumer(AsyncWebsocketConsumer):
@@ -26,13 +18,17 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         )
 
         await self.accept()
+        messages = await self.return_unread_messages(self.chat_uuid)
+        await self.mark_messages_as_read(messages)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
             self.chat_group_name,
             self.channel_name
         )
+        await self.close()
 
+    # deal with the data received by websocket and send to own group
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
@@ -45,23 +41,25 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
             self.chat_group_name,
             {
                 'type': 'send_message',
-                'message': message.content,
-                "message_time": message.getMessageTime(),
+                'message': message,
                 'user_id': user_id,
                 'chat_uuid': chat_uuid,
             }
         )
 
+    # send the data to consumers of current chat
     async def send_message(self, event):
         message = event["message"]
         user_id = event["user_id"]
-        message_time = event["message_time"]
+        message_time = message.getMessageTime()
         await self.send(text_data=json.dumps({
             "user_id": user_id,
-            "message": message,
+            "message": message.content,
             "message_time": message_time,
         }))
+        await self.mark_messages_as_read([message])
 
+    # save the message on database
     @database_sync_to_async
     def save_message(self, message, user_id, chat_uuid):
         print(user_id, chat_uuid, "----------------------")
@@ -69,6 +67,28 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         chat = Conversation.objects.get(uuid=chat_uuid)
 
         return Message.objects.create(sender=user_profile, content=message, conversation_id=chat.id)
+
+    # verify if the profile have unread messages in the chat
+    @database_sync_to_async
+    def return_unread_messages(self, chat_uuid):
+        chat = Conversation.objects.get(uuid=chat_uuid)
+        profile = Profile.objects.get(user=self.scope["user"])
+        messages = Message.objects.filter(
+            Q(conversation=chat) & ~Q(sender=profile))
+
+        return messages
+
+    # pass a list of messages from chat to mark as read
+    @database_sync_to_async
+    def mark_messages_as_read(self, messages):
+        user = self.scope['user']
+        for message in messages:
+            if message.sender.user != user:
+                recipient = Profile.objects.get(user=user)
+                message = MessageReadStatus.objects.get(
+                    Q(message=message) & Q(recipientProfile=recipient))
+                message.is_read = True
+                message.save()
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):
@@ -123,7 +143,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
                 )
 
     async def send_message(self, type_event, message, message_time, recipient, sender, chat_uuid):
-        sync_to_async(print)(recipient)
         await self.send(text_data=json.dumps({
             "type": type_event,
             "message": message,
@@ -149,42 +168,3 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'name': profile.name,
             'photo': profile.photo.url,
         }
-
-
-@receiver(post_save, sender=Message)
-def message_post_save(sender, instance, **kwargs):
-    # Extract details of message
-    message = {
-        "message": instance.content,
-        "message_time": instance.getMessageTime(),
-        "profile_id": instance.sender.id,
-        "chat_uuid": instance.conversation.uuid,
-    }
-
-    chat_participants = Conversation.objects.get(uuid=instance.conversation.uuid).participants.filter(
-        ~Q(id=message['profile_id']))
-    for participant in chat_participants:
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'notification_user{participant.id}',
-            {
-                "type": "notify_user",
-                **message,
-            }
-        )
-
-
-@receiver(post_save, sender=Profile)
-def user_change_status(sender, instance, **kwargs):
-    channel_layer = get_channel_layer()
-    print(NotificationConsumer.list_of_groups.items())
-    for group, friend in NotificationConsumer.list_of_groups.items():
-        if friend == instance.id:
-            async_to_sync(channel_layer.group_send)(
-                group,
-                {
-                    "type": "change_friend_status",
-                    "friend": instance.id,
-                    "status": instance.status_display(),
-                }
-            )

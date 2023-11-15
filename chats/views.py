@@ -10,7 +10,7 @@ from django.views.generic import TemplateView, View, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from chats.forms import UpdateProfileForm
-from chats.models import Contact, Conversation, Message, Profile
+from chats.models import Contact, Conversation, Message, Profile, MessageReadStatus
 
 
 class ChatView(LoginRequiredMixin, TemplateView):
@@ -26,12 +26,17 @@ class ChatView(LoginRequiredMixin, TemplateView):
             # it's temp while the app only accepts individual chats
             try:
                 last_message = chat.get_last_message()
+                status = None
+                if last_message and last_message.sender != profile:
+                    status = MessageReadStatus.objects.filter(
+                        Q(message=last_message) & Q(recipientProfile=profile)).first()
             except ObjectDoesNotExist:
                 last_message = None
-
+                status = None
             context['chats'].append({
                 'chat': chat.participants.filter(~Q(id=profile.id))[0],
                 'last_message': last_message.content if last_message else '',
+                'status_message': status.is_read if status else True
             })
 
         return context
