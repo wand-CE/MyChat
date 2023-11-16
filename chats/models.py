@@ -59,6 +59,21 @@ class Conversation(models.Model):
         return last_message
 
 
+class GroupNames(models.Model):
+    name = models.CharField(null=False, unique=False, max_length=100)
+    chat = models.OneToOneField(Conversation, on_delete=models.CASCADE, null=False,
+                                limit_choices_to={'is_group': True})
+    photo = StdImageField(upload_to='profile_photos',
+                          variations={'thumb': {'width': 600,
+                                                'height': 600, 'crop': True}},
+                          default='profile_photos/default_group_profile.png',
+                          verbose_name='Foto de Perfil')
+
+    class Meta:
+        verbose_name = 'Group'
+        verbose_name_plural = 'Groups'
+
+
 class Message(models.Model):
     sender = models.ForeignKey(
         Profile, related_name='sent_messages', on_delete=models.CASCADE, editable=False)

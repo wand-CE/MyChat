@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load bootstrap4 %}
 
 {% load static %}
 
@@ -28,20 +29,20 @@
                     </div>
                 </div>
                 <div id="chat-list">
-                    {% for chat in chats %}
+                    {% for c in chats %}
                     <div
                             class="list-group-item list-group-item-action d-flex align-items-center chat-item"
-                            data-chat_id="{{ chat.chat.id }}"
+                            data-chat_id="uuid:{{ c.data.uuid }}"
                     >
                         <img
                                 class="mr-3 rounded-circle"
-                                src="{{ chat.chat.photo.thumb.url }}"
+                                src="{{ c.data.photo }}"
                         />
                         <div class="messagePreview">
-                            <div class="chat_name h6">{{ chat.chat.name }}</div>
-                            <div class="last_message">{{ chat.last_message }}</div>
+                            <div class="chat_name h6">{{ c.data.name }}</div>
+                            <div class="last_message">{{ c.last_message }}</div>
                         </div>
-                        {% if not chat.status_message %}
+                        {% if not c.status_message %}
                         <span class="notification"></span>
                         {% endif %}
 
@@ -69,6 +70,23 @@
                                 <div id="status" class="small"></div>
                             </div>
                         </div>
+                        <div class="dropdown ml-auto">
+                            <a class="bi bi-three-dots-vertical text-dark"
+                            style="font-size: x-large;"
+                                type="button"
+                                id="dropdownMenuButton1"
+                                data-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false">
+                            </a>
+                            <!--in development-->
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                              <li><a class="dropdown-item" href="#">Action</a></li>
+                              <li><a class="dropdown-item" href="#">Another action</a></li>
+                              <li><a class="dropdown-item" href="#">Something else here</a></li>
+                            </ul>
+                        </div>
+                        
                     </div>
                     <strong id="sendMessage">Selecione ou adicione um amigo para conversar</strong>
                     <span id="messages"></span>

@@ -43,6 +43,10 @@
   max-width: 60%;
 }
 
+.p-2.bg-secondary {
+  background-color: #182229 !important;
+}
+
 .active-chat {
   background-color: #002f5d !important;
 }

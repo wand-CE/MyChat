@@ -1,5 +1,5 @@
 from django.contrib import admin
-from chats.models import Message, Profile, Conversation, Contact
+from chats.models import Message, Profile, Conversation, Contact, GroupNames
 from chats.forms import ConversationForm
 
 
@@ -22,3 +22,8 @@ class ProfileAdmin(admin.ModelAdmin):
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
     list_display = ['user', 'friend', 'added_on']
+
+
+@admin.register(GroupNames)
+class GroupsAdmin(admin.ModelAdmin):
+    list_display = ['name', 'chat']

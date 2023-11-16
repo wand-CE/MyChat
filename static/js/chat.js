@@ -65,12 +65,12 @@ document.addEventListener("DOMContentLoaded", () =>
   document.getElementById("csrf_token").remove()
 );
 
-function claim_websocket(chat_id) {
+function claim_websocket(chat_data) {
   fetch("/return_chat/", {
     method: "POST",
     headers: { "X-CSRFToken": csrftoken },
     mode: "same-origin",
-    body: JSON.stringify({ chat_id: chat_id }),
+    body: JSON.stringify({ chat_data: chat_data }),
   })
     .then((response) => {
       if (response.ok) {
@@ -97,6 +97,7 @@ function claim_websocket(chat_id) {
           mode: "same-origin",
           body: JSON.stringify({
             chat_uuid: data_file["chat_uuid"],
+            is_group: data_file["is_group"],
             current_user_id: current_user_id,
           }),
         })
@@ -112,7 +113,7 @@ function claim_websocket(chat_id) {
             status_user.innerHTML = data.friend_status;
 
             data.messages.forEach((element) => {
-              populate_messages(element);
+              populate_messages(element.concat(data.is_group));
             });
           });
       };
@@ -140,6 +141,7 @@ function claim_websocket(chat_id) {
             JSON.stringify({
               message: messageInput,
               user_id: current_user_id,
+              is_group: data_file["is_group"],
               chat_uuid: data_file["chat_uuid"],
             })
           );
@@ -154,7 +156,12 @@ function claim_websocket(chat_id) {
         }
         chat_list.insertBefore(active_chat, chat_list.children[0]);
 
-        populate_messages([data.user_id, data.message, data.message_time]);
+        populate_messages([
+          data.user,
+          data.message,
+          data.message_time,
+          data.is_group,
+        ]);
       };
     })
     .catch((error) => {
@@ -176,10 +183,12 @@ chat_and_search.addEventListener("click", (event) => {
     document.getElementById("sendMessage").className = "d-none";
 
     let active_chat = document.querySelector(".active-chat");
-    let chatId = chatItem.dataset.chat_id;
+    let chatData = chatItem.dataset.chat_id;
 
     if (chatItem.closest("#divResults")) {
-      let elementInList = chat_list.querySelector(`[data-chat_id='${chatId}']`);
+      let elementInList = chat_list.querySelector(
+        `[data-chat_id='${chatData}']`
+      );
       if (!elementInList) {
         chat_list.appendChild(chatItem);
       } else {
@@ -193,23 +202,22 @@ chat_and_search.addEventListener("click", (event) => {
 
     if (active_chat) {
       // the return stop the function case chatItem is already selected
-      if (chatId === active_chat.dataset.chat_id) return;
+      if (chatData === active_chat.dataset.chat_id) return;
       active_chat.classList.remove("active-chat");
     }
 
     let notification = chatItem.querySelector("span.notification");
-    if (notification) notification.remove(); // remove notification dot case it have
+    if (notification) notification.remove(); // remove notification signal case it have
 
     chatItem.classList.add("active-chat");
-
-    claim_websocket(chatId);
+    claim_websocket(chatData);
 
     // this is temp while theres no group chats
-    notifySocket.send(
-      JSON.stringify({
-        friend_id: parseInt(chatId),
-      })
-    );
+    // notifySocket.send(
+    //   JSON.stringify({
+    //     friend_id: parseInt(chatId),
+    //   })
+    // );
 
     current_chat_img.src = chatItem.querySelector("img").src;
     current_chat_name.innerHTML =
@@ -219,7 +227,7 @@ chat_and_search.addEventListener("click", (event) => {
   }
 });
 
-function populate_messages([user_id, message, message_time]) {
+function populate_messages([user, message, message_time, is_group]) {
   const time = message_time.split("|"); //split the message in date and hour
   const date = parseInt(time[0].replaceAll("/", "")); //transform to date to Int
 
@@ -245,19 +253,20 @@ function populate_messages([user_id, message, message_time]) {
   );
 
   div_child.style.minWidth = "60px";
-
-  div_child.innerHTML = `<span class="mr-4" style='font-size:14px'>${message}</span>
-                         <span class="ml-auto" style='font-size:11px'>${time[1]}</span>`;
-  div.appendChild(div_child);
-
   div.classList.add("d-flex", "mb-2");
-  if (user_id === current_user_id) {
+  if (user.id === current_user_id) {
     div.classList.add("justify-content-end");
     div_child.classList.add("bg-primary");
   } else {
+    div_child.innerHTML = is_group ? `<strong>${user.name}</strong>` : "";
     div.classList.add("justify-content-start");
     div_child.classList.add("bg-secondary");
   }
+
+  div_child.innerHTML += `<span class="mr-4" style='font-size:14px'>${message}</span>
+                         <span class="ml-auto" style='font-size:11px'>${time[1]}</span>`;
+
+  div.appendChild(div_child);
 
   messages.appendChild(div);
   scrollToBottom();
@@ -295,7 +304,7 @@ search_input.addEventListener("input", () => {
             "align-items-center",
             "chat-item"
           );
-          element.dataset.chat_id = result.id;
+          element.dataset.chat_id = result.uuid;
 
           let profile_photo = document.createElement("img");
           profile_photo.className = "mr-3 rounded-circle";

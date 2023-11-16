@@ -33,16 +33,20 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         user_id = text_data_json['user_id']
+        is_group = text_data_json['is_group']
         chat_uuid = text_data_json["chat_uuid"]
 
         message = await self.save_message(message, user_id, chat_uuid)
+        profile = await self.get_profile(user_id)
 
         await self.channel_layer.group_send(
             self.chat_group_name,
             {
                 'type': 'send_message',
                 'message': message,
-                'user_id': user_id,
+                'user_id': profile['id'],
+                'name': profile['name'],
+                'is_group': is_group,
                 'chat_uuid': chat_uuid,
             }
         )
@@ -51,11 +55,14 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
     async def send_message(self, event):
         message = event["message"]
         user_id = event["user_id"]
+        name = event["name"]
+        is_group = event["is_group"]
         message_time = message.getMessageTime()
         await self.send(text_data=json.dumps({
-            "user_id": user_id,
+            "user": {'id': user_id, "name": name},
             "message": message.content,
             "message_time": message_time,
+            "is_group": is_group,
         }))
         await self.mark_messages_as_read([message])
 
@@ -89,6 +96,11 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
                     Q(message=message) & Q(recipientProfile=recipient))
                 message.is_read = True
                 message.save()
+
+    @database_sync_to_async
+    def get_profile(self, profile_id):
+        profile = Profile.objects.get(id=int(profile_id))
+        return {'id': profile.id, 'name': profile.name}
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):
