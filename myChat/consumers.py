@@ -125,7 +125,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        self.current_chat_friend = text_data_json['friend_id']
+        self.current_chat_friend = text_data_json['chat_uuid']
 
         self.list_of_groups[self.chat_group_name] = self.current_chat_friend
 
@@ -140,19 +140,26 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         message_time = event["message_time"],
         type_event = event['type']
 
-        recipients = await self.get_recipients(chat_uuid, sender_id)
         sender = await self.get_sender_data(sender_id)
 
-        async for recipient in recipients:
-            if recipient.id != sender_id:
-                await self.send_message(
-                    type_event,
-                    message,
-                    message_time,
-                    recipient,
-                    sender,
-                    str(chat_uuid)
-                )
+        if self.profile_id != sender_id:
+            await self.send_message(
+                type_event,
+                message,
+                message_time,
+                await self.get_current_profile(),
+                sender,
+                str(chat_uuid)
+            )
+        else:
+            await self.send_message(
+                type_event,
+                message,
+                message_time,
+                sender,
+                await self.get_current_profile(),
+                str(chat_uuid)
+            )
 
     async def send_message(self, type_event, message, message_time, recipient, sender, chat_uuid):
         await self.send(text_data=json.dumps({
@@ -161,16 +168,29 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             "message_time": message_time,
             "sender": await self.get_profile_data(sender),
             "recipient": await self.get_profile_data(recipient),
-            "chat_uuid": chat_uuid,
+            "chat": await self.get_chat_data(chat_uuid),
         }))
+
+    @database_sync_to_async
+    def get_chat_data(self, chat_uuid):
+        chat = Conversation.objects.get(uuid=chat_uuid)
+        is_group = chat.is_group
+        chat_data = chat.get_group_data() if chat.is_group else ''
+
+        return {
+            'uuid': str(chat.uuid),
+            'photo': chat_data.photo.thumb.url if is_group else '',
+            'name': chat_data.name if is_group else '',
+            'is_group': is_group,
+        }
 
     @database_sync_to_async
     def get_sender_data(self, sender_id):
         return Profile.objects.get(id=sender_id)
 
     @database_sync_to_async
-    def get_recipients(self, chat_uuid, sender_id):
-        return Conversation.objects.get(uuid=chat_uuid).participants.filter(~Q(id=sender_id))
+    def get_current_profile(self):
+        return Profile.objects.get(id=self.profile_id)
 
     @database_sync_to_async
     def get_profile_data(self, profile: Profile):
@@ -178,5 +198,5 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         return {
             'id': profile.id,
             'name': profile.name,
-            'photo': profile.photo.url,
+            'photo': profile.photo.thumb.url,
         }

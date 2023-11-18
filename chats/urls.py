@@ -7,4 +7,5 @@ urlpatterns = [
     path('search_page', views.SearchView.as_view(), name='search_page'),
     path('chat/get_old_messages/', views.GetOldMessages.as_view(), name='old_messages'),
     path('profile/edit/', views.UpdateProfile.as_view(), name='profileSettings'),
+    path('create_group/', views.CreateGroup.as_view(), name='createGroup'),
 ]

@@ -1,3 +1,5 @@
+import { createChatElement, chat_list } from "./principalsFunctions.js";
+
 const chatMessages = document.querySelector("#chat-content");
 const messages = document.querySelector("#messages");
 
@@ -5,8 +7,6 @@ const status_user = document.getElementById("status");
 
 //temporario
 const chat_and_search = document.getElementById("chat_and_search");
-
-const chat_list = document.getElementById("chat-list");
 
 const current_chat = document.getElementById("current_chat");
 const current_chat_name = current_chat.querySelector("#current_chat_name");
@@ -30,9 +30,27 @@ notifySocket.onmessage = function (event) {
         ? data.recipient
         : data.sender;
 
-    let element = document.querySelector(`[data-chat_id="${chatProfile.id}"]`);
+    let element = document.querySelector(
+      `[data-chat_id="uuid:${data.chat.uuid}"]`
+    );
+
     if (!element) {
-      element = createChatElement(chatProfile, data.message);
+      if (data.chat.is_group) {
+        let chat = data.chat;
+        element = createChatElement(
+          chat.uuid,
+          chat.photo,
+          chat.name,
+          data.message
+        );
+      } else {
+        element = createChatElement(
+          data.chat.uuid,
+          chatProfile.photo,
+          chatProfile.name,
+          data.message
+        );
+      }
     }
 
     chat_list.insertBefore(element, chat_list.children[0]);
@@ -65,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () =>
   document.getElementById("csrf_token").remove()
 );
 
-function claim_websocket(chat_data) {
+function claim_websocket(chat_data, chatItem) {
   fetch("/return_chat/", {
     method: "POST",
     headers: { "X-CSRFToken": csrftoken },
@@ -88,6 +106,8 @@ function claim_websocket(chat_data) {
         `ws://${window.location.host}/ws/chat/${data_file["chat_uuid"]}/`
       );
 
+      chatItem.dataset.chat_id = `uuid:${data_file["chat_uuid"]}`;
+
       messages.innerHTML = "";
 
       chatSocket.onopen = (e) => {
@@ -108,9 +128,28 @@ function claim_websocket(chat_data) {
             throw new Error(response.status);
           })
           .then((data) => {
-            document.querySelector(".online_status").style.display =
-              data.friend_status === "Online" ? "flex" : "none";
-            status_user.innerHTML = data.friend_status;
+            let group_participants = document.querySelector(
+              "#group_participants"
+            );
+
+            if (!data.is_group) {
+              document.querySelector(".online_status").style.display =
+                data.friend_status === "Online" ? "flex" : "none";
+              status_user.innerHTML = data.friend_status;
+              group_participants.style.display = "none";
+
+              status_user.style.display = "flex";
+            } else {
+              let children = group_participants.parentElement.children;
+
+              Array.from(children).forEach((child) => {
+                child.style.display = "none";
+              });
+
+              group_participants.textContent = data.participants;
+
+              group_participants.style.display = "flex";
+            }
 
             data.messages.forEach((element) => {
               populate_messages(element.concat(data.is_group));
@@ -210,14 +249,14 @@ chat_and_search.addEventListener("click", (event) => {
     if (notification) notification.remove(); // remove notification signal case it have
 
     chatItem.classList.add("active-chat");
-    claim_websocket(chatData);
+    claim_websocket(chatData, chatItem);
 
     // this is temp while theres no group chats
-    // notifySocket.send(
-    //   JSON.stringify({
-    //     friend_id: parseInt(chatId),
-    //   })
-    // );
+    notifySocket.send(
+      JSON.stringify({
+        chat_uuid: chatData,
+      })
+    );
 
     current_chat_img.src = chatItem.querySelector("img").src;
     current_chat_name.innerHTML =
@@ -334,17 +373,3 @@ search_input.addEventListener("input", () => {
       }
     });
 });
-
-function createChatElement(chatProfile, message) {
-  let element = document.createElement("div");
-
-  element.className =
-    "list-group-item list-group-item-action d-flex align-items-center chat-item";
-  element.dataset.chat_id = chatProfile.id;
-  element.innerHTML = `<img class="mr-3 rounded-circle" src="${chatProfile.photo}"/>
-                        <div class="messagePreview">
-                          <div class="chat_name h6">${chatProfile.name}</div>
-                          <div class="last_message">${message}</div>
-                        </div>`;
-  return element;
-}

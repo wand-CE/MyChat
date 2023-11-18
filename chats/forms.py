@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 
-from chats.models import Profile, Conversation
+from chats.models import GroupNames, Profile, Conversation
 
 
 class UpdateProfileForm(forms.ModelForm):
@@ -48,11 +48,41 @@ class ConversationForm(forms.ModelForm):
                 raise forms.ValidationError({
                     "participants": "You have to assign two participants in a private chat",
                 })
-            else:
-                chat = Conversation.objects.filter(participants=participants[0]).filter(
-                    participants=participants[1]).first()
-                if self.current_uuid and chat.uuid == self.current_uuid:
-                    return self.cleaned_data
-                if chat:
-                    raise forms.ValidationError("This chat already exists")
+
+            chat = Conversation.objects.filter(participants=participants[0]).filter(
+                participants=participants[1]).first()
+            if self.current_uuid and chat.uuid == self.current_uuid:
+                return self.cleaned_data
+            if chat:
+                raise forms.ValidationError("This chat already exists")
         return self.cleaned_data
+
+
+class CreateGroupForm(forms.ModelForm):
+    participants = forms.ModelMultipleChoiceField(
+        queryset=Profile.objects.all())
+
+    def __init__(self, current_user, *args, **kwargs):
+        super(CreateGroupForm, self).__init__(*args, **kwargs)
+        self.fields['participants'].queryset = Profile.objects.exclude(
+            user=current_user)
+
+    class Meta:
+        model = GroupNames
+        fields = ['name', 'participants', 'photo']
+        labels = {
+            "name": 'Nome do Grupo',
+            "photo": 'Foto do Grupo',
+        }
+
+    def clean(self):
+        if not len(self.cleaned_data['name'].strip()):
+            raise forms.ValidationError({"name": "Empty Group Name"})
+
+        if not self.cleaned_data.get('participants', None):
+            raise forms.ValidationError(
+                {"participants": "participants can't be empty"})
+        return self.cleaned_data
+
+    def save(self, commit=True):
+        print('TESTE ', self)

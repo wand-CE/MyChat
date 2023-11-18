@@ -58,16 +58,25 @@ class Conversation(models.Model):
         last_message = self.messages.order_by('-timestamp').first()
         return last_message
 
+    def get_group_data(self):
+        if self.is_group:
+            try:
+                return self.chat_data
+            except ObjectDoesNotExist:
+                GroupNames.objects.create(name='Generic Name', chat=self)
+                return self.chat_data
+
 
 class GroupNames(models.Model):
     name = models.CharField(null=False, unique=False, max_length=100)
-    chat = models.OneToOneField(Conversation, on_delete=models.CASCADE, null=False,
+    chat = models.OneToOneField(Conversation, related_name='chat_data', on_delete=models.CASCADE, null=False,
                                 limit_choices_to={'is_group': True})
     photo = StdImageField(upload_to='profile_photos',
                           variations={'thumb': {'width': 600,
                                                 'height': 600, 'crop': True}},
                           default='profile_photos/default_group_profile.png',
                           verbose_name='Foto de Perfil')
+    admin = models.ManyToManyField(Profile, related_name='group_admins')
 
     class Meta:
         verbose_name = 'Group'

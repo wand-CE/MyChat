@@ -9,7 +9,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView, View, FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from chats.forms import UpdateProfileForm
+from chats.forms import UpdateProfileForm, CreateGroupForm
 from chats.models import Contact, Conversation, Message, Profile, MessageReadStatus, GroupNames
 
 
@@ -35,7 +35,7 @@ class ChatView(LoginRequiredMixin, TemplateView):
                 status = None
 
             if chat.is_group:
-                group_element = GroupNames.objects.get(chat=chat)
+                group_element = chat.get_group_data()
                 name = group_element.name
                 photo = group_element.photo
             else:
@@ -46,12 +46,15 @@ class ChatView(LoginRequiredMixin, TemplateView):
             context['chats'].append({
                 'data': {
                     'uuid': chat.uuid,
+                    'is_group': chat.is_group,
                     'name': name,
                     'photo': photo.thumb.url,
                 },
                 'last_message': last_message.content if last_message else '',
                 'status_message': status.is_read if status else True
             })
+
+            context['form_create_group'] = CreateGroupForm(self.request.user)
 
         return context
 
@@ -137,6 +140,10 @@ class GetOldMessages(LoginRequiredMixin, View):
                               message.timestamp.strftime("%d/%m/%Y|%H:%M")] for message in messages]
         dicio['is_group'] = chat.is_group
 
+        if dicio['is_group']:
+            dicio['participants'] = ', '.join(
+                p.name for p in chat.participants.all())
+
         return JsonResponse(dicio)
 
 
@@ -186,3 +193,33 @@ class UpdateProfile(LoginRequiredMixin, FormView):
 
     def form_invalid(self, form):
         return super(UpdateProfile, self).form_invalid(form)
+
+
+class CreateGroup(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        form = CreateGroupForm(request.user, request.POST)
+        if form.is_valid():
+            current_profile = Profile.objects.get(user=request.user)
+
+            chat = Conversation.objects.create(is_group=True)
+            chat.participants.add(current_profile)
+
+            group_name = form.cleaned_data['name']
+            participants = form.cleaned_data['participants']
+
+            for participant in participants:
+                chat.participants.add(participant)
+
+            photo = self.request.FILES.get('photo', None)
+            if photo:
+                group = GroupNames.objects.create(
+                    chat=chat, name=group_name, photo=photo)
+            else:
+                group = GroupNames.objects.create(chat=chat, name=group_name)
+            group.admin.add(current_profile)
+
+        return JsonResponse({
+            "chatUuid": chat.uuid,
+            "photo": group.photo.thumb.url,
+            "name": group.name,
+        })

@@ -48,7 +48,8 @@ def message_read(sender, instance, created, **kwargs):
             chat = Conversation.objects.get(pk=instance.conversation.id)
             for participant in chat.participants.all():
                 if participant.id != instance.sender.id:
-                    MessageReadStatus.objects.create(recipientProfile=participant, message=instance)
+                    MessageReadStatus.objects.create(
+                        recipientProfile=participant, message=instance)
         except ObjectDoesNotExist:
             pass
 
@@ -63,8 +64,8 @@ def message_post_save(sender, instance, **kwargs):
         "chat_uuid": instance.conversation.uuid,
     }
 
-    chat_participants = Conversation.objects.get(uuid=instance.conversation.uuid).participants.filter(
-        ~Q(id=message['profile_id']))
+    chat_participants = Conversation.objects.get(
+        uuid=instance.conversation.uuid).participants.all()
     for participant in chat_participants:
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
