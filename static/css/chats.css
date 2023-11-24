@@ -99,7 +99,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  font-size: small;
+  font-size: medium;
 }
 
 .messagePreview {
@@ -122,4 +122,15 @@
     max-height: 12em;
     height: 12em;
   }
+}
+
+#id_participants,
+#participants_group {
+  max-height: 300px;
+  height: 300px;
+  overflow: auto;
+}
+
+.was-validated #searchParticipants:valid {
+  background-image: none;
 }

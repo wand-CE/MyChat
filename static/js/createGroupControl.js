@@ -1,6 +1,10 @@
 import { createChatElement, chat_list } from "./principalsFunctions.js";
+import {
+  elementsOnselected,
+  selectedParticipants,
+} from "./controlParticipantsNewGroup.js";
 
-let menuControl = $("#myCarousel");
+let menuControl = $("#myCarouselNewGroup");
 
 function nextSlide() {
   let currentSlide = $(".carousel-item.active");
@@ -14,6 +18,14 @@ function nextSlide() {
     }
   });
 
+  if (currentSlide.hasClass("participants-item")) {
+    let groupParticipants = currentSlide.find("#id_participants")[0].children;
+    if (!groupParticipants.length) {
+      isValid = false;
+      return false;
+    }
+  }
+
   if (isValid) {
     menuControl.carousel("next");
   }
@@ -21,16 +33,17 @@ function nextSlide() {
 
 function backSlide() {
   menuControl.carousel("prev");
+  nextSlideButton.onclick = null;
 }
 
 let backSlideButton = document.querySelector(".backSlideButton");
-backSlideButton.addEventListener("click", backSlide);
-
 let nextSlideButton = document.querySelector(".nextSlideButton");
+
+backSlideButton.addEventListener("click", backSlide);
 
 menuControl.on("slide.bs.carousel", function (event) {
   let currentSlide = event.to;
-  let totalSlides = $("#myCarousel .carousel-item").length - 1;
+  let totalSlides = $("#myCarouselNewGroup .carousel-item").length - 1;
 
   backSlideButton.disabled = currentSlide ? false : true;
   disable_slide('[data-slide="prev"]', currentSlide ? true : false);
@@ -62,6 +75,7 @@ nextSlideButton.addEventListener("click", (event) => {
 function createGroup() {
   let form = document.getElementById("formCreateGroup");
   let data = new FormData(form);
+  data.append("participants", elementsOnselected);
 
   fetch("/create_group/", {
     method: "POST",
@@ -75,7 +89,7 @@ function createGroup() {
         chat_list.children[0]
       );
     });
-
+  selectedParticipants.empty();
   form.reset();
   menuControl.carousel(0);
 }

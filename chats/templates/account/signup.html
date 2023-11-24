@@ -21,7 +21,14 @@
                     <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
                         {% csrf_token %}
                         <div class="mb-3">
-                            {% bootstrap_form form %}
+                            {% for element in form %}
+                            {% if element.name != 'password1' and element.name != 'password2' %}
+                                {% bootstrap_field element %}
+                            {% else %}
+                                {% bootstrap_label element.label %}
+                                {% bootstrap_field element show_label=False field_class='input-group' addon_after='<i class="see_password btn btn-light border border-secondary bi bi-eye-slash" style="font-size: large; max-height: 90%;"></i>' addon_after_class=None %}
+                            {% endif %}
+                            {% endfor %}
                         </div>
                         {% if redirect_field_value %}
                         <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}"/>
@@ -35,3 +42,20 @@
 
 </div>
 {% endblock content %}
+{% block extra_body %}
+<script type="text/javascript">
+    let seePasswordButtons = document.querySelectorAll(".see_password");
+
+    seePasswordButtons.forEach(button => {
+        let input = button.closest(".input-group").querySelector("input");
+        button.addEventListener("click", () => togglePasswordVisibility(button, input));
+    });
+
+    function togglePasswordVisibility(button, input) {
+        button.classList.toggle('bi-eye-slash');
+        button.classList.toggle('bi-eye');
+        input.type = (input.type === 'password') ? 'text' : 'password';
+    }
+</script> 
+
+{% endblock extra_body %}

@@ -10,7 +10,7 @@
 
 {% if user.is_authenticated %}
 {% block content %}
-<div id="profile_id" data-profile_id="{{ current_profile_id }}"></div>
+<div id="profile_id" data-profile_id="{{ current_profile_id }}" data-currentProfile="{{ request.user.username }}"></div>
 <div class="container-fluid mt-2">
     <div class="row no-gutters">
         <div class="col-md-4 block-chats">
@@ -27,23 +27,23 @@
                           <i class="bi bi-search"></i>
                         </span>
                     </div>
-                    <div class="dropdown border-left border-dark" >
+                    <div class="dropdown border-left border-dark bg-white">
                         <a class="bi bi-three-dots-vertical text-dark"
-                        style="font-size: x-large;"
-                            type="button"
-                            id="dropdownMenuButton1"
-                            data-toggle="dropdown"
-                            aria-haspopup="true"
-                            aria-expanded="false">
+                           style="font-size: x-large;"
+                           type="button"
+                           id="dropdownMenuButton1"
+                           data-toggle="dropdown"
+                           aria-haspopup="true"
+                           aria-expanded="false">
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                          <li
-                          class="dropdown-item btn btn-primary"
-                          type="button"
-                          data-toggle="modal"
-                          data-target="#createGroupForm">
-                            Criar Grupo
-                          </li>    
+                            <li
+                                    class="dropdown-item btn btn-primary"
+                                    type="button"
+                                    data-toggle="modal"
+                                    data-target="#createGroupForm">
+                                Criar Grupo
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -59,8 +59,21 @@
                                 src="{{ c.data.photo }}"
                         />
                         <div class="messagePreview">
-                            <div class="chat_name h6">{{ c.data.name }}</div>
-                            <div class="last_message">{{ c.last_message }}</div>
+                            <div class="chat_name ">{{ c.data.name }}</div>
+                            <div class="last_message">
+                                {% if c.data.is_group %}
+                                <strong>
+                                    {% if c.last_message %}
+                                    {% if user.username != c.last_message.sender.name %}
+                                    {{ c.last_message.sender.name }}:
+                                    {% else %}
+                                    Você:
+                                    {% endif %}
+                                    {% endif %}
+                                </strong>
+                                {% endif %}
+                                {{ c.last_message.content }}
+                            </div>
                         </div>
                         {% if not c.status_message %}
                         <span class="notification"></span>
@@ -89,25 +102,25 @@
                             <div class="row no-gutters">
                                 <div class="online_status"></div>
                                 <div id="status" class="small"></div>
-                                <div id="group_participants" class="small" style="display: none;"></div>
+                                <div id="groupElements" class="small" style="display: none;"></div>
                             </div>
                         </div>
-                        <div class="dropdown ml-auto">
+                        <div class="dropdown ml-auto group-menu" style="display: none;">
                             <a class="bi bi-three-dots-vertical text-dark"
-                            style="font-size: x-large;"
-                                type="button"
-                                id="dropdownMenuButton1"
-                                data-toggle="dropdown"
-                                aria-haspopup="true"
-                                aria-expanded="false">
+                               style="font-size: x-large;"
+                               type="button"
+                               id="dropdownMenuButton1"
+                               data-toggle="dropdown"
+                               aria-haspopup="true"
+                               aria-expanded="false">
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                              <li><a class="dropdown-item" href="#">Action</a></li>
-                              <li><a class="dropdown-item" href="#">Another action</a></li>
-                              <li><a class="dropdown-item" href="#">Something else here</a></li>
+                                <li class="btn dropdown-item" type="button" data-toggle="modal" data-target="#menu_group_participants">
+                                    Editar Grupo
+                                </li>
                             </ul>
                         </div>
-                        
+
                     </div>
                     <strong id="sendMessage">Selecione ou adicione um amigo para conversar</strong>
                     <span id="messages"></span>
@@ -129,7 +142,8 @@
         </div>
     </div>
 </div>
-{% include 'includes/menu_principal.html' %}
+{% include 'includes/participants_menu_new_group.html' %}
+{% include 'includes/participants_group.html' %}
 
 {{csrf_token|safe|json_script:"csrf_token"}}
 
@@ -140,6 +154,10 @@
 <script src="{% static 'js/chat.js' %}" type="module">
 </script>
 <script src="{% static 'js/createGroupControl.js' %}" type="module">
+</script>
+<script src="{% static 'js/controlParticipantsNewGroup.js' %}" type="module">
+</script>
+<script src="{% static 'js/controlParticipantsGroup.js' %}" type="module">
 </script>
 {% endblock extra_body %}
 {% endif %}

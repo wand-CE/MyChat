@@ -36,7 +36,7 @@ class Profile(models.Model):
         verbose_name_plural = 'Profiles'
 
     def __str__(self):
-        return f'Profile of {self.name}'
+        return self.name
 
 
 class Conversation(models.Model):
@@ -70,13 +70,14 @@ class Conversation(models.Model):
 class GroupNames(models.Model):
     name = models.CharField(null=False, unique=False, max_length=100)
     chat = models.OneToOneField(Conversation, related_name='chat_data', on_delete=models.CASCADE, null=False,
-                                limit_choices_to={'is_group': True})
+                                editable=False)
     photo = StdImageField(upload_to='profile_photos',
                           variations={'thumb': {'width': 600,
                                                 'height': 600, 'crop': True}},
                           default='profile_photos/default_group_profile.png',
                           verbose_name='Foto de Perfil')
-    admin = models.ManyToManyField(Profile, related_name='group_admins')
+    admin = models.ManyToManyField(
+        Profile, related_name='group_admins')
 
     class Meta:
         verbose_name = 'Group'
@@ -94,6 +95,12 @@ class Message(models.Model):
     class Meta:
         verbose_name = 'Message'
         verbose_name_plural = 'Messages'
+
+    def is_read(self):
+        for element in self.read_status.all():
+            if not element.is_read:
+                return False
+        return True
 
     def __str__(self):
         return f'Mensagem {self.conversation}'

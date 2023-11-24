@@ -1,11 +1,16 @@
-import { createChatElement, chat_list } from "./principalsFunctions.js";
+import {
+  createChatElement,
+  chat_list,
+  searchUsers,
+  csrftoken,
+} from "./principalsFunctions.js";
+
+import { populateGroupParticipants } from "./controlParticipantsGroup.js";
 
 const chatMessages = document.querySelector("#chat-content");
 const messages = document.querySelector("#messages");
 
 const status_user = document.getElementById("status");
-
-//temporario
 const chat_and_search = document.getElementById("chat_and_search");
 
 const current_chat = document.getElementById("current_chat");
@@ -15,6 +20,9 @@ const current_chat_img = current_chat.querySelector("img");
 const current_user_id = parseInt(
   document.getElementById("profile_id").dataset.profile_id
 );
+
+const current_profile_name =
+  document.getElementById("profile_id").dataset.currentprofile;
 
 document.getElementById("profile_id").remove();
 
@@ -62,7 +70,9 @@ notifySocket.onmessage = function (event) {
       element.innerHTML += '<span class="notification"></span>';
     }
 
-    element.querySelector(".last_message").innerHTML = data.message;
+    element.querySelector(".last_message").innerHTML = `<strong>${
+      chatProfile.name === current_profile_name ? "Você" : chatProfile.name
+    }: </strong>${data.message}`;
   } else if (data.type === "change_friend_status") {
     document.querySelector(".online_status").style.display =
       data.status === "Online" ? "flex" : "none";
@@ -77,11 +87,6 @@ function scrollToBottom() {
 }
 
 scrollToBottom();
-const csrftoken = JSON.parse(document.getElementById("csrf_token").textContent);
-
-document.addEventListener("DOMContentLoaded", () =>
-  document.getElementById("csrf_token").remove()
-);
 
 function claim_websocket(chat_data, chatItem) {
   fetch("/return_chat/", {
@@ -128,9 +133,11 @@ function claim_websocket(chat_data, chatItem) {
             throw new Error(response.status);
           })
           .then((data) => {
-            let group_participants = document.querySelector(
-              "#group_participants"
-            );
+            let group_participants = document.querySelector("#groupElements");
+
+            data.messages.forEach((element) => {
+              populate_messages(element.concat(data.is_group));
+            });
 
             if (!data.is_group) {
               document.querySelector(".online_status").style.display =
@@ -139,6 +146,7 @@ function claim_websocket(chat_data, chatItem) {
               group_participants.style.display = "none";
 
               status_user.style.display = "flex";
+              document.querySelector(".group-menu").style.display = "none";
             } else {
               let children = group_participants.parentElement.children;
 
@@ -146,14 +154,17 @@ function claim_websocket(chat_data, chatItem) {
                 child.style.display = "none";
               });
 
-              group_participants.textContent = data.participants;
+              let groupMenu = document.querySelector(".group-menu");
+              groupMenu.dataset.chat_uuid = data_file["chat_uuid"];
+              groupMenu.style.display = "flex";
 
+              group_participants.textContent = data.participants.names;
               group_participants.style.display = "flex";
-            }
 
-            data.messages.forEach((element) => {
-              populate_messages(element.concat(data.is_group));
-            });
+              let participants = data.participants;
+
+              populateGroupParticipants(participants);
+            }
           });
       };
       chatSocket.onclose = (e) => {
@@ -189,18 +200,28 @@ function claim_websocket(chat_data, chatItem) {
 
       chatSocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
-        const active_chat = document.querySelector(".active-chat");
-        if (data.user_id == current_user_id) {
-          active_chat.querySelector(".last_message").innerHTML = data.message;
-        }
-        chat_list.insertBefore(active_chat, chat_list.children[0]);
+        if (data.type === "send_message") {
+          const active_chat = document.querySelector(".active-chat");
+          if (data.user_id == current_user_id) {
+            active_chat.querySelector(".last_message").innerHTML = data.message;
+          }
+          chat_list.insertBefore(active_chat, chat_list.children[0]);
 
-        populate_messages([
-          data.user,
-          data.message,
-          data.message_time,
-          data.is_group,
-        ]);
+          populate_messages([
+            data.user,
+            data.is_read,
+            data.message,
+            data.message_time,
+            data.is_group,
+          ]);
+        } else if (data.type === "mark_message_read_on_page") {
+          if (data.owner_of_message === current_user_id) {
+            chatMessages.querySelectorAll(".bi-check").forEach((item) => {
+              item.classList.remove("bi-check");
+              item.classList.add("bi-check-all");
+            });
+          }
+        }
       };
     })
     .catch((error) => {
@@ -266,7 +287,7 @@ chat_and_search.addEventListener("click", (event) => {
   }
 });
 
-function populate_messages([user, message, message_time, is_group]) {
+function populate_messages([user, is_read, message, message_time, is_group]) {
   const time = message_time.split("|"); //split the message in date and hour
   const date = parseInt(time[0].replaceAll("/", "")); //transform to date to Int
 
@@ -296,14 +317,23 @@ function populate_messages([user, message, message_time, is_group]) {
   if (user.id === current_user_id) {
     div.classList.add("justify-content-end");
     div_child.classList.add("bg-primary");
+
+    div_child.innerHTML += `<span class="mr-4" style='font-size:14px'>${message}</span>
+                         <span class="ml-auto time" style='font-size:11px'>${time[1]}
+                         </span>`;
+    let check = document.createElement("i");
+    check.className = `bi bi-check${is_read ? "-all" : ""}`;
+    check.style.fontSize = "large";
+
+    div_child.querySelector(".time").appendChild(check);
   } else {
     div_child.innerHTML = is_group ? `<strong>${user.name}</strong>` : "";
     div.classList.add("justify-content-start");
     div_child.classList.add("bg-secondary");
-  }
 
-  div_child.innerHTML += `<span class="mr-4" style='font-size:14px'>${message}</span>
+    div_child.innerHTML += `<span class="mr-4" style='font-size:14px'>${message}</span>
                          <span class="ml-auto" style='font-size:11px'>${time[1]}</span>`;
+  }
 
   div.appendChild(div_child);
 
@@ -324,7 +354,7 @@ search_input.addEventListener("input", () => {
   chat_list.style.display = "none";
   chat_and_search.appendChild(divResults);
 
-  fetch(`/search_page?searched=${search_input.value}`)
+  searchUsers(search_input.value)
     .then((response) =>
       response.ok ? response.json() : new Error(response.status)
     )

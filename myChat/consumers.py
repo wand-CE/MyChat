@@ -1,6 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+from django.core.exceptions import ObjectDoesNotExist
 
 from django.db.models import Q
 
@@ -36,40 +37,48 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         is_group = text_data_json['is_group']
         chat_uuid = text_data_json["chat_uuid"]
 
-        message = await self.save_message(message, user_id, chat_uuid)
         profile = await self.get_profile(user_id)
 
-        await self.channel_layer.group_send(
-            self.chat_group_name,
-            {
-                'type': 'send_message',
-                'message': message,
-                'user_id': profile['id'],
-                'name': profile['name'],
-                'is_group': is_group,
-                'chat_uuid': chat_uuid,
-            }
-        )
+        if await self.is_in_chat(user_id, chat_uuid):
+            message = await self.save_message(message, user_id, chat_uuid)
+
+            await self.channel_layer.group_send(
+                self.chat_group_name,
+                {
+                    'type': 'send_message',
+                    'message': message,
+                    'user_id': profile['id'],
+                    'name': profile['name'],
+                    'is_group': is_group,
+                    'chat_uuid': chat_uuid,
+                }
+            )
+        else:
+
+            await self.close()
 
     # send the data to consumers of current chat
+
     async def send_message(self, event):
         message = event["message"]
         user_id = event["user_id"]
         name = event["name"]
         is_group = event["is_group"]
         message_time = message.getMessageTime()
+        await self.mark_messages_as_read([message])
+
         await self.send(text_data=json.dumps({
+            "type": "send_message",
             "user": {'id': user_id, "name": name},
+            "is_read": await database_sync_to_async(message.is_read)(),
             "message": message.content,
             "message_time": message_time,
             "is_group": is_group,
         }))
-        await self.mark_messages_as_read([message])
 
     # save the message on database
     @database_sync_to_async
     def save_message(self, message, user_id, chat_uuid):
-        print(user_id, chat_uuid, "----------------------")
         user_profile = Profile.objects.get(id=user_id)
         chat = Conversation.objects.get(uuid=chat_uuid)
 
@@ -92,15 +101,29 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         for message in messages:
             if message.sender.user != user:
                 recipient = Profile.objects.get(user=user)
-                message = MessageReadStatus.objects.get(
-                    Q(message=message) & Q(recipientProfile=recipient))
-                message.is_read = True
-                message.save()
+                try:
+                    message = MessageReadStatus.objects.get(
+                        Q(message=message) & Q(recipientProfile=recipient))
+                    if not message.is_read:
+                        message.is_read = True
+                        message.save()
+                except ObjectDoesNotExist:
+                    pass
 
     @database_sync_to_async
     def get_profile(self, profile_id):
         profile = Profile.objects.get(id=int(profile_id))
         return {'id': profile.id, 'name': profile.name}
+
+    @database_sync_to_async
+    def is_in_chat(self, profile_id, chat_uuid):
+        chat = Conversation.objects.get(uuid=chat_uuid)
+        profile = Profile.objects.get(id=int(profile_id))
+
+        return profile in chat.participants.all()
+
+    async def mark_message_read_on_page(self, event):
+        await self.send(text_data=json.dumps(event))
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):

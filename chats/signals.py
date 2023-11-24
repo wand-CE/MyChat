@@ -90,3 +90,18 @@ def user_change_status(sender, instance, **kwargs):
                     "status": instance.status_display(),
                 }
             )
+
+
+@receiver(post_save, sender=MessageReadStatus)
+def get_read_message(sender, instance, **kwargs):
+    if instance.is_read:
+        message = instance.message
+        if message.is_read():
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'chat_{message.conversation.uuid}',
+                {
+                    "type": "mark_message_read_on_page",
+                    "owner_of_message": message.sender.id,
+                }
+            )

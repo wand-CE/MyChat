@@ -59,17 +59,9 @@ class ConversationForm(forms.ModelForm):
 
 
 class CreateGroupForm(forms.ModelForm):
-    participants = forms.ModelMultipleChoiceField(
-        queryset=Profile.objects.all())
-
-    def __init__(self, current_user, *args, **kwargs):
-        super(CreateGroupForm, self).__init__(*args, **kwargs)
-        self.fields['participants'].queryset = Profile.objects.exclude(
-            user=current_user)
-
     class Meta:
         model = GroupNames
-        fields = ['name', 'participants', 'photo']
+        fields = ['name', 'photo']
         labels = {
             "name": 'Nome do Grupo',
             "photo": 'Foto do Grupo',
@@ -78,11 +70,4 @@ class CreateGroupForm(forms.ModelForm):
     def clean(self):
         if not len(self.cleaned_data['name'].strip()):
             raise forms.ValidationError({"name": "Empty Group Name"})
-
-        if not self.cleaned_data.get('participants', None):
-            raise forms.ValidationError(
-                {"participants": "participants can't be empty"})
         return self.cleaned_data
-
-    def save(self, commit=True):
-        print('TESTE ', self)

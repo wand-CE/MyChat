@@ -21,6 +21,7 @@ class ChatView(LoginRequiredMixin, TemplateView):
         profile = Profile.objects.get(user_id=self.request.user.id)
         context['current_profile_id'] = profile.id
         context['chats'] = []
+        context['form_create_group'] = CreateGroupForm
         chats = self.get_chats(profile)
         for chat in chats:
             # it's temp while the app only accepts individual chats
@@ -50,11 +51,9 @@ class ChatView(LoginRequiredMixin, TemplateView):
                     'name': name,
                     'photo': photo.thumb.url,
                 },
-                'last_message': last_message.content if last_message else '',
+                'last_message': last_message if last_message else '',
                 'status_message': status.is_read if status else True
             })
-
-            context['form_create_group'] = CreateGroupForm(self.request.user)
 
         return context
 
@@ -81,6 +80,7 @@ class SearchView(LoginRequiredMixin, View):
 
             dicio = {}
             dicio['uuid'] = f'uuid:{search_chat.uuid}' if search_chat else f'profile_id:{profile.id}'
+            dicio['profile_id'] = profile.id
             dicio['name'] = profile.name
             dicio['photo'] = profile.photo.thumb.url
 
@@ -135,14 +135,25 @@ class GetOldMessages(LoginRequiredMixin, View):
 
         messages = Message.objects.filter(conversation=chat.id)
 
-        dicio["messages"] = [[{'id': message.sender.id, 'name': message.sender.name},
-                              message.content,
-                              message.timestamp.strftime("%d/%m/%Y|%H:%M")] for message in messages]
+        dicio["messages"] = [[
+            {
+                'id': message.sender.id,
+                'name': message.sender.name,
+            },
+            message.is_read(),
+            message.content,
+            message.timestamp.strftime("%d/%m/%Y|%H:%M")] for message in messages]
         dicio['is_group'] = chat.is_group
 
         if dicio['is_group']:
-            dicio['participants'] = ', '.join(
-                p.name for p in chat.participants.all())
+            dicio['participants'] = {'names': [],
+                                     'profiles_ids': [],
+                                     'photos': []}
+
+            for p in chat.participants.all():
+                dicio['participants']['names'].append(f' {p.name}'),
+                dicio['participants']['profiles_ids'].append(p.id),
+                dicio['participants']['photos'].append(p.photo.thumb.url)
 
         return JsonResponse(dicio)
 
@@ -197,7 +208,7 @@ class UpdateProfile(LoginRequiredMixin, FormView):
 
 class CreateGroup(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
-        form = CreateGroupForm(request.user, request.POST)
+        form = CreateGroupForm(request.POST)
         if form.is_valid():
             current_profile = Profile.objects.get(user=request.user)
 
@@ -205,10 +216,12 @@ class CreateGroup(LoginRequiredMixin, View):
             chat.participants.add(current_profile)
 
             group_name = form.cleaned_data['name']
-            participants = form.cleaned_data['participants']
+            participants = self.request.POST.get('participants', None)
 
-            for participant in participants:
-                chat.participants.add(participant)
+            if participants:
+                for p_id in participants.split(','):
+                    profile = Profile.objects.get(id=int(p_id))
+                    chat.participants.add(profile)
 
             photo = self.request.FILES.get('photo', None)
             if photo:
@@ -223,3 +236,16 @@ class CreateGroup(LoginRequiredMixin, View):
             "photo": group.photo.thumb.url,
             "name": group.name,
         })
+
+
+class ModifyGroup(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        chat = Conversation.objects.get(uuid=data['chat_uuid'])
+        chat.participants.clear()
+        for profile_id in data['listProfiles']:
+            profile = Profile.objects.get(id=int(profile_id))
+            chat.participants.add(profile)
+        chat.save()
+
+        return JsonResponse({'status': 'Success'})
