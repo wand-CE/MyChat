@@ -200,10 +200,10 @@ class UpdateProfile(LoginRequiredMixin, FormView):
             profile.photo = self.request.FILES['photo']
             profile.save()
 
-        return super(UpdateProfile, self).form_valid(form)
+        return super().form_valid(form)
 
     def form_invalid(self, form):
-        return super(UpdateProfile, self).form_invalid(form)
+        return super().form_invalid(form)
 
 
 class CreateGroup(LoginRequiredMixin, View):

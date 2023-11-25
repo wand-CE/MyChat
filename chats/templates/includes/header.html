@@ -1,31 +1,27 @@
 {% load i18n %}
 <nav class="navbar navbar-expand-sm navbar-dark">
-    <a class="home_button ml-sm-5 text-white" href="{% url 'home' %}">myChat</a>
+    <a class="home_button ml-sm-5 mx-3 text-white" href="{% url 'home' %}">myChat</a>
     <button
             class="navbar-toggler"
             type="button"
-            data-toggle="collapse"
-            data-target="#navbarNav"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
             aria-controls="navbarNav"
             aria-expanded="false"
             aria-label="Toggle navigation"
     >
         <span class="navbar-toggler-icon text-light"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <div class="navbar-nav ml-auto">
+    <div class="collapse navbar-collapse ms-auto justify-content-end" id="navbarNav">
+        <div class="navbar-nav">
             {% if user.is_authenticated %}
-            <a class="btn btn-secondary" href="{% url 'profileSettings' %}">Editar Perfil</a>
-            <a class="ml-sm-2 btn btn-danger" href="{% url 'account_logout' %}">{% trans "Sign Out" %}</a>
+            <a class="ml-sm-2 mx-3 btn btn-light" href="{% url 'profileSettings' %}">Editar Perfil</a>
+            <a class="ml-sm-2 mx-3 btn btn-danger" href="{% url 'account_logout' %}">{% trans "Sign Out" %}</a>
             {% else %}
-            <a class="btn btn-secondary" href="{% url 'account_login' %}">{% trans "Sign In" %}</a>
-            <a class="ml-sm-2 btn btn-secondary" href="{% url 'account_signup' %}">{% trans "Sign Up" %}</a>
+            <a class="ml-sm-2 mx-3 btn btn-light" href="{% url 'account_login' %}">{% trans "Sign In" %}</a>
+            <a class="ml-sm-2 mx-3 btn btn-light" href="{% url 'account_signup' %}">{% trans "Sign Up" %}</a>
             {% endif %}
-            <!--
-            <a href="#" class="mr-3 btn btn-dark">Login</a>
-            <a href="#" class="mr-3 btn">Cadastrar</a>
-            <a href="#" class="mr-3 btn btn-danger">Sair</a>
-            -->
         </div>
     </div>
 </nav>
+

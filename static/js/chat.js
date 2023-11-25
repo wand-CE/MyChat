@@ -380,7 +380,7 @@ search_input.addEventListener("input", () => {
           profile_photo.src = result.photo;
 
           element.appendChild(profile_photo);
-          element.innerHTML += `<div class="messagePreview">
+          element.innerHTML += `<div class="messagePreview m-2">
             <div class="chat_name h6">${result.name}</div>
             <div class="last_message"></div>
           </div>`;

@@ -1,4 +1,4 @@
-{% load bootstrap4 %}
+{% load django_bootstrap5 %}
 <div
   class="modal fade"
   id="createGroupForm"
@@ -18,14 +18,13 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="ModalTitle">Criar Grupo</h5>
-          <button
+          <i
             type="button"
-            class="close closeCreateGroup"
-            data-dismiss="modal"
+            class="close closeCreateGroup bi bi-x-lg"
+            data-bs-dismiss="modal"
             aria-label="Close"
           >
-            <span aria-hidden="true">&times;</span>
-          </button>
+        </i>
         </div>
         <div class="modal-body">
           <div

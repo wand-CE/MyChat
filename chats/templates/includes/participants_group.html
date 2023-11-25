@@ -1,41 +1,40 @@
-{% load bootstrap4 %}
+{% load django_bootstrap5 %}
 <div
-  class="modal fade"    
-  id="menu_group_participants"
-  tabindex="-1"
-  role="dialog"
-  aria-hidden="true"
+        class="modal fade"
+        id="menu_group_participants"
+        tabindex="-1"
+        role="dialog"
+        aria-hidden="true"
 >
     <div class="modal-dialog modal-dialog-centered" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="ModalTitle">Editar Grupo</h5>
-          <button
-            type="button"
-            class="close"
-            data-dismiss="modal"
-            aria-label="Close"
-          >
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body">
-              <div class="participants-item">
-                <div class="input-group border shadow search-bar mb-1">
-                  <input
-                    type="text"
-                    id="searchGroupParticipants"
-                    class="form-control border-0 shadow-none"
-                    placeholder="Pesquisar participantes..."
-                  />
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ModalTitle">Editar Grupo</h5>
+                <i
+                    type="button"
+                    class="close bi bi-x-lg"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                >
+            </i>
+            </div>
+            <div class="modal-body">
+                <div class="participants-item">
+                    <div class="input-group border shadow search-bar mb-1">
+                        <input
+                                type="text"
+                                id="searchGroupParticipants"
+                                class="form-control border-0 shadow-none"
+                                placeholder="Pesquisar participantes..."
+                        />
+                    </div>
+                    <div id="groupParticipants"></div>
+                    <div id="participants_group" class="form-control active_participants_div"></div>
                 </div>
-                <div id="groupParticipants"></div>
-                <div id="participants_group" class="form-control active_participants_div" ></div>
-              </div>
+            </div>
+            <div class="modal-footer">
+                <span class="btn btn-primary" id="saveGroupData">Salvar</span>
+            </div>
         </div>
-        <div class="modal-footer">
-            <span class="btn btn-primary" id="saveGroupData">Salvar</a>
-        </div>
-      </div>
     </div>
 </div>

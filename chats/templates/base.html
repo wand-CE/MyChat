@@ -8,7 +8,7 @@
     <link rel="shortcut icon" href="#"/>
     <title>{% block head_title %}{% endblock head_title %}</title>
     {% load static %}
-    {% load bootstrap4 %}
+    {% load django_bootstrap5 %}
 
     {% bootstrap_css %}
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
@@ -17,8 +17,8 @@
 
     {% bootstrap_javascript %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" type="text/css" href="{% static '/css/includes/header.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static '/css/base.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/includes/header.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/base.css' %}">
     {% block extra_head %}
     {% endblock extra_head %}
 </head>

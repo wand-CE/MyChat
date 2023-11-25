@@ -41,7 +41,7 @@ export function addParticipantToContainer(
   if (!listParticipantsTosend.includes(profile_id)) {
     element.classList.remove("btn");
     element.innerHTML +=
-      '<i class="btn ml-auto bi bi-trash text-danger small remove-participant" style="font-size: x-large"></i>';
+      '<i class="btn ms-auto bi bi-trash text-danger small remove-participant" style="font-size: x-large"></i>';
     selectedParticipants.append(element);
     listParticipantsTosend.push(profile_id);
   }
