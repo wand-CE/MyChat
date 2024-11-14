@@ -1,8 +1,8 @@
 import {
-  performSearch,
-  addParticipantToContainer,
+    performSearch,
+    addParticipantToContainer,
 } from "./participantManager.js";
-import { profileElement, csrftoken } from "./principalsFunctions.js";
+import {profileElement, csrftoken} from "./principalsFunctions.js";
 
 const resultsContainer = $("#groupParticipants");
 const currentGroupParticipants = $("#participants_group");
@@ -11,70 +11,70 @@ const saveGroupButton = $("#saveGroupData");
 let elementsOnselected = [];
 
 export function populateGroupParticipants(participants) {
-  elementsOnselected = [];
-  currentGroupParticipants.empty();
+    elementsOnselected = [];
+    currentGroupParticipants.empty();
 
-  for (let i = 0; i < participants.names.length; i++) {
-    let element = profileElement(
-      participants.profiles_ids[i],
-      participants.photos[i],
-      participants.names[i]
-    );
+    for (let i = 0; i < participants.names.length; i++) {
+        let element = profileElement(
+            participants.profiles_ids[i],
+            participants.photos[i],
+            participants.names[i]
+        );
 
-    let elementProfile = document.createElement("div");
-    elementProfile.innerHTML = element;
+        let elementProfile = document.createElement("div");
+        elementProfile.innerHTML = element;
 
-    addParticipantToContainer(
-      elementProfile.children[0],
-      elementsOnselected,
-      currentGroupParticipants,
-      resultsContainer,
-      searchParticipantsBar
-    );
-  }
+        addParticipantToContainer(
+            elementProfile.children[0],
+            elementsOnselected,
+            currentGroupParticipants,
+            resultsContainer,
+            searchParticipantsBar
+        );
+    }
 }
 
 resultsContainer.click((event) =>
-  addParticipantToContainer(
-    event.target,
-    elementsOnselected,
-    currentGroupParticipants,
-    resultsContainer,
-    searchParticipantsBar
-  )
+    addParticipantToContainer(
+        event.target,
+        elementsOnselected,
+        currentGroupParticipants,
+        resultsContainer,
+        searchParticipantsBar
+    )
 );
 
 searchParticipantsBar.on("input", function () {
-  const query = $(this).val();
-  performSearch(
-    query,
-    resultsContainer,
-    elementsOnselected,
-    currentGroupParticipants
-  );
+    const query = $(this).val();
+    performSearch(
+        query,
+        resultsContainer,
+        elementsOnselected,
+        currentGroupParticipants
+    );
 });
 
 currentGroupParticipants.on("click", ".remove-participant", (event) => {
-  const parent = event.target.closest(".list-group-item");
-  if (parent) {
-    let index = elementsOnselected.indexOf(parent.dataset.profileid);
-    elementsOnselected.splice(index, 1);
-    parent.remove();
-  }
+    const parent = event.target.closest(".list-group-item");
+    if (parent) {
+        let index = elementsOnselected.indexOf(parent.dataset.profileid);
+        elementsOnselected.splice(index, 1);
+        parent.remove();
+    }
 });
 
 saveGroupButton.on("click", (event) => {
-  let groupMenu = document.querySelector(".group-menu");
-  let chat_uuid = groupMenu.dataset.chat_uuid;
-  fetch("/modifyGroup/", {
-    method: "POST",
-    headers: { "X-CSRFToken": csrftoken },
-    credentials: "same-origin",
-    body: JSON.stringify({
-      chat_uuid: chat_uuid,
-      listProfiles: elementsOnselected,
-    }),
-  });
+    let groupMenu = document.querySelector(".group-menu");
+    let chat_uuid = groupMenu.dataset.chat_uuid;
+    fetch("/group/modify/", {
+        method: "POST",
+        headers: {"X-CSRFToken": csrftoken},
+        credentials: "same-origin",
+        body: JSON.stringify({
+            chat_uuid: chat_uuid,
+            listProfiles: elementsOnselected,
+        }),
+    });
 
-  event.target.closest(".modal").querySelector(".close").click();
+    event.target.closest(".modal").querySelector(".close").click();
 });

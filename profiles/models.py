@@ -18,6 +18,9 @@ class Profile(models.Model):
     def name(self):
         return self.user.username
 
+    def get_name(self):
+        return self.name
+
     def get_last_activity(self):
         return {
             'day': self.last_activity.strftime('%d/%m/%Y'),

@@ -27,8 +27,8 @@ class ChatView(LoginRequiredMixin, TemplateView):
                 last_message = chat.get_last_message()
                 status = None
                 if last_message and last_message.sender != profile:
-                    status = MessageReadStatus.objects.filter(
-                        Q(message=last_message) & Q(recipientProfile=profile)).first()
+                    status = MessageReadStatus.objects.filter(Q(message=last_message) & Q(recipientProfile=profile))
+                    status = (status.first())
             except ObjectDoesNotExist:
                 last_message = None
                 status = None
@@ -63,28 +63,29 @@ class ChatView(LoginRequiredMixin, TemplateView):
 class SearchView(LoginRequiredMixin, View):
     def get(self, request):
         current_user = request.user
-        searched = request.GET.get('searched')
-        users = User.objects.filter(
-            Q(username__icontains=searched) & ~Q(id=current_user.id)
-        )
-        current_user_profile = Profile.objects.get(user=current_user)
+        profiles = request.GET.get('profiles', None)
 
-        profiles = [Profile.objects.get(user=user) for user in users]
-        list_profiles = []
+        if profiles:
+            users = User.objects.filter(Q(username__icontains=profiles) & ~Q(id=current_user.id))
+            current_user_profile = Profile.objects.get(user=current_user)
 
-        for profile in profiles:
-            search_chat = Conversation.objects.filter(Q(is_group=False) & Q(participants=current_user_profile)).filter(
-                participants=profile).first()
+            profiles = [Profile.objects.get(user=user) for user in users]
+            list_profiles = []
 
-            dicio = {}
-            dicio['uuid'] = f'uuid:{search_chat.uuid}' if search_chat else f'profile_id:{profile.id}'
-            dicio['profile_id'] = profile.id
-            dicio['name'] = profile.name
-            dicio['photo'] = profile.photo.thumb.url
+            for profile in profiles:
+                search_chat = Conversation.objects.filter(Q(is_group=False) & Q(participants=current_user_profile))
+                search_chat = (search_chat.filter(participants=profile).first())
 
-            list_profiles.append(dicio)
+                current_profile = {
+                    'uuid': f'uuid:{search_chat.uuid}' if search_chat else f'profile_id:{profile.id}',
+                    'profile_id': profile.id,
+                    'name': profile.name,
+                    'photo': profile.photo.thumb.url,
+                }
 
-        return JsonResponse({'profiles': list_profiles})
+                list_profiles.append(current_profile)
+            return JsonResponse({'profiles': list_profiles})
+        return JsonResponse({'erro': 'argumento profiles faltando'})
 
 
 class ReturnChat(LoginRequiredMixin, View):
@@ -112,7 +113,6 @@ class ReturnChat(LoginRequiredMixin, View):
                 'current_user_name': request.user.username
             })
         except Exception as e:
-            print(e)
             return HttpResponseNotFound()
 
 

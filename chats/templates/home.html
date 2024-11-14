@@ -13,16 +13,12 @@
         <div id="profile_id" data-profile_id="{{ current_profile_id }}"
              data-currentProfile="{{ request.user.username }}"></div>
         <div class="mt-2">
-            <div class="row no-gutters">
-                <div class="col-md-4 p-0 block-chats">
+            <div class="row g-0 min-vh-100 d-flex flex-column flex-md-row">
+                <div class="col-md-4 pe-0 block-chats ">
                     <div class="list-group" id="chat_and_search">
                         <div class="input-group border shadow search-bar mb-1">
-                            <input
-                                    type="text"
-                                    class="form-control border-0 shadow-none"
-                                    id="search_input"
-                                    placeholder="Pesquisar..."
-                            />
+                            <input type="text" class="form-control border-0 shadow-none" id="search_input"
+                                   placeholder="Pesquisar..."/>
                             <div class="input-group-append" id="search_button">
                         <span class="btn input-group-text bg-white border-0 shadow-none">
                           <i class="bi bi-search"></i>

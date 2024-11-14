@@ -1,14 +1,19 @@
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.db import database_sync_to_async
-from django.core.exceptions import ObjectDoesNotExist
 
+from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 
 from chats.models import Conversation, Message, Profile, MessageReadStatus
 
 
 class ChatRoomConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.chat_group_name = None
+        self.chat_uuid = None
+
     async def connect(self):
         self.chat_uuid = self.scope['url_route']['kwargs']['chat_uuid']
         self.chat_group_name = f'chat_{self.chat_uuid}'
@@ -20,7 +25,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
         messages = await self.return_unread_messages(self.chat_uuid)
-        await self.mark_messages_as_read(messages)
+        self.mark_messages_as_read(messages)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
@@ -30,7 +35,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         await self.close()
 
     # deal with the data received by websocket and send to own group
-    async def receive(self, text_data):
+    async def receive(self, text_data=None, bytes_data=None):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         user_id = text_data_json['user_id']
@@ -39,16 +44,17 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
 
         profile = await self.get_profile(user_id)
 
-        if await self.is_in_chat(user_id, chat_uuid):
+        if self.is_in_chat(user_id, chat_uuid):
             message = await self.save_message(message, user_id, chat_uuid)
+            profile_name = await self.get_profile_name(profile)
 
             await self.channel_layer.group_send(
                 self.chat_group_name,
                 {
                     'type': 'send_message',
                     'message': message,
-                    'user_id': profile['id'],
-                    'name': profile['name'],
+                    'user_id': profile.id,
+                    'name': profile_name,
                     'is_group': is_group,
                     'chat_uuid': chat_uuid,
                 }
@@ -65,7 +71,7 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
         name = event["name"]
         is_group = event["is_group"]
         message_time = message.getMessageTime()
-        await self.mark_messages_as_read([message])
+        self.mark_messages_as_read([message])
 
         await self.send(text_data=json.dumps({
             "type": "send_message",
@@ -112,8 +118,11 @@ class ChatRoomConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_profile(self, profile_id):
-        profile = Profile.objects.get(id=int(profile_id))
-        return {'id': profile.id, 'name': profile.name}
+        return Profile.objects.get(id=int(profile_id))
+
+    @database_sync_to_async
+    def get_profile_name(self, profile):
+        return profile.get_name()
 
     @database_sync_to_async
     def is_in_chat(self, profile_id, chat_uuid):
@@ -131,6 +140,11 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     current_chat_friend = None
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.chat_group_name = None
+        self.profile_id = None
+
     async def connect(self):
         self.profile_id = self.scope['url_route']['kwargs']['profile_id']
 
@@ -146,7 +160,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         await self.close()
 
-    async def receive(self, text_data):
+    async def receive(self, text_data=None, bytes_data=None):
         text_data_json = json.loads(text_data)
         self.current_chat_friend = text_data_json['chat_uuid']
 

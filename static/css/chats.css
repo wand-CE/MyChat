@@ -1,133 +1,133 @@
 .buttons {
-  background-color: #002f5d !important;
-  color: white;
+    background-color: #002f5d !important;
+    color: white;
 }
 
 .p-2.bg-primary {
-  background-color: #002f5d !important;
+    background-color: #002f5d !important;
 }
 
 #chat-content {
-  background-color: aliceblue;
-  height: 400px;
-  overflow-y: auto;
-  scrollbar-width: thin;
+    background-color: aliceblue;
+    height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 #chat-content {
-  padding: 1.25em;
+    padding: 1.25em;
 }
 
 *::-webkit-scrollbar {
-  width: 5px;
+    width: 5px;
 }
 
 *::-webkit-scrollbar-track {
-  background: #f4f4f4;
+    background: #f4f4f4;
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: #002f5d;
+    background-color: #002f5d;
 }
 
 .chat-item img {
-  width: 60px;
-  height: 60px;
+    width: 60px;
+    height: 60px;
 }
 
 .p-2.bg-secondary,
 .p-2.bg-primary {
-  max-width: 60%;
+    max-width: 60%;
 }
 
 .p-2.bg-secondary {
-  background-color: #182229 !important;
+    background-color: #182229 !important;
 }
 
 .active-chat {
-  background-color: #002f5d !important;
+    background-color: #002f5d !important;
 }
 
 .active-chat div {
-  color: white !important;
+    color: white !important;
 }
 
 .chat-item {
-  cursor: pointer;
-  overflow: hidden;
+    cursor: pointer;
+    overflow: hidden;
 }
 
 .notification {
-  background-color: #25d366;
-  border-radius: 50%;
-  width: 15px;
-  height: 15px;
-  display: inline-block;
-  margin-left: 10px;
-  right: 20px;
-  position: absolute;
+    background-color: #25d366;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    margin-left: 10px;
+    right: 20px;
+    position: absolute;
 }
 
 .online_status {
-  background-color: green;
-  border-radius: 50%;
-  height: 10px;
-  width: 10px;
-  margin: 0.4em 0.5em 0 0;
-  display: none;
+    background-color: green;
+    border-radius: 50%;
+    height: 10px;
+    width: 10px;
+    margin: 0.4em 0.5em 0 0;
+    display: none;
 }
 
 .chat_name {
-  overflow: hidden;
-  color: black;
+    overflow: hidden;
+    color: black;
 }
 
 #current_chat img {
-  height: 40px;
+    height: 40px;
 }
 
 #current_chat {
-  position: sticky;
-  top: -21px;
-  margin: -1.25em -1.25em 2em -1.25em;
+    position: sticky;
+    top: -21px;
+    margin: -1.25em -1.25em 2em -1.25em;
 }
 
 .last_message {
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  font-size: medium;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: medium;
 }
 
 .messagePreview {
-  width: 70%;
+    width: 70%;
 }
+
 .block-chats {
-  overflow: auto;
-  max-height: 29em;
-  background-color: white;
+    overflow: auto;
+    background-color: white;
 }
 
 .search-bar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 @media (max-width: 767px) {
-  .block-chats {
-    max-height: 12em;
-    height: 12em;
-  }
+    .block-chats {
+        max-height: 12em;
+        height: 12em;
+    }
 }
 
 #id_participants,
 #participants_group {
-  max-height: 300px;
-  height: 300px;
-  overflow: auto;
+    max-height: 300px;
+    height: 300px;
+    overflow: auto;
 }
 
 .was-validated #searchParticipants:valid {
-  background-image: none;
+    background-image: none;
 }
