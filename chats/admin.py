@@ -1,6 +1,7 @@
 from django.contrib import admin
-from chats.models import Message, Profile, Conversation, Contact, GroupNames
+
 from chats.forms import ConversationForm
+from chats.models import Conversation, Message, Contact
 
 
 @admin.register(Message)
@@ -14,16 +15,6 @@ class ConversationAdmin(admin.ModelAdmin):
     list_display = ['uuid', 'is_group']
 
 
-@admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'is_online']
-
-
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
     list_display = ['user', 'friend', 'added_on']
-
-
-@admin.register(GroupNames)
-class GroupsAdmin(admin.ModelAdmin):
-    list_display = ['name', 'chat']

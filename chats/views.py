@@ -1,16 +1,14 @@
 import json
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Max
+from django.http import HttpResponseNotFound, JsonResponse
+from django.views.generic import TemplateView, View
 
-from django.http import HttpResponseNotFound, JsonResponse, Http404
-from django.urls import reverse_lazy
-from django.views.generic import TemplateView, View, FormView
-from django.contrib.auth.mixins import LoginRequiredMixin
-
-from chats.forms import UpdateProfileForm, CreateGroupForm
-from chats.models import Contact, Conversation, Message, Profile, MessageReadStatus, GroupNames
+from chats.models import Conversation, Message, Profile, MessageReadStatus
+from groups.forms import CreateGroupForm
 
 
 class ChatView(LoginRequiredMixin, TemplateView):
@@ -156,96 +154,3 @@ class GetOldMessages(LoginRequiredMixin, View):
                 dicio['participants']['photos'].append(p.photo.thumb.url)
 
         return JsonResponse(dicio)
-
-
-class UpdateProfile(LoginRequiredMixin, FormView):
-    template_name = 'update_profile.html'
-    form_class = UpdateProfileForm
-
-    success_url = reverse_lazy('profileSettings')
-
-    def get_object(self):
-        try:
-            return Profile.objects.get(user=self.request.user)
-        except Profile.DoesNotExist:
-            raise Http404("Perfil não existe")
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['instance'] = self.get_object()
-        return kwargs
-
-    def get(self, request, *args, **kwargs):
-        profile = self.get_object()
-        form = self.form_class(initial={
-            'username': profile.user.username
-        }, instance=profile)
-        return self.render_to_response(self.get_context_data(form=form))
-
-    def get_context_data(self, **kwargs):
-        profile = self.get_object()
-        context = super().get_context_data(**kwargs)
-
-        context['currentPhoto'] = profile.photo.thumb
-
-        return context
-
-    def form_valid(self, form):
-        user = User.objects.get(username=self.request.user)
-        user.username = self.request.POST.get('username')
-        user.save()
-
-        if self.request.FILES.get('photo', False):
-            profile = self.get_object()
-            profile.photo = self.request.FILES['photo']
-            profile.save()
-
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        return super().form_invalid(form)
-
-
-class CreateGroup(LoginRequiredMixin, View):
-    def post(self, request, *args, **kwargs):
-        form = CreateGroupForm(request.POST)
-        if form.is_valid():
-            current_profile = Profile.objects.get(user=request.user)
-
-            chat = Conversation.objects.create(is_group=True)
-            chat.participants.add(current_profile)
-
-            group_name = form.cleaned_data['name']
-            participants = self.request.POST.get('participants', None)
-
-            if participants:
-                for p_id in participants.split(','):
-                    profile = Profile.objects.get(id=int(p_id))
-                    chat.participants.add(profile)
-
-            photo = self.request.FILES.get('photo', None)
-            if photo:
-                group = GroupNames.objects.create(
-                    chat=chat, name=group_name, photo=photo)
-            else:
-                group = GroupNames.objects.create(chat=chat, name=group_name)
-            group.admin.add(current_profile)
-
-        return JsonResponse({
-            "chatUuid": chat.uuid,
-            "photo": group.photo.thumb.url,
-            "name": group.name,
-        })
-
-
-class ModifyGroup(LoginRequiredMixin, View):
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body)
-        chat = Conversation.objects.get(uuid=data['chat_uuid'])
-        chat.participants.clear()
-        for profile_id in data['listProfiles']:
-            profile = Profile.objects.get(id=int(profile_id))
-            chat.participants.add(profile)
-        chat.save()
-
-        return JsonResponse({'status': 'Success'})

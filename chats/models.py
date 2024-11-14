@@ -1,51 +1,17 @@
-from django.contrib.auth import get_user_model
-from django.db import models
-from stdimage import StdImageField
-from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
-
 import uuid
 
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.db import models
 
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    photo = StdImageField(upload_to='profile_photos',
-                          variations={'thumb': {'width': 600,
-                                                'height': 600, 'crop': True}},
-                          default='profile_photos/defaultProfile.png',
-                          verbose_name='Foto de Perfil')
-    is_online = models.BooleanField(default=False, verbose_name='online')
-    last_activity = models.DateTimeField(blank=True, auto_now_add=True)
-
-    @property
-    def name(self):
-        return self.user.username
-
-    def get_last_activity(self):
-        return {
-            'day': self.last_activity.strftime('%d/%m/%Y'),
-            'hour': self.last_activity.strftime('%H:%M')
-        }
-
-    def status_display(self):
-        return "Online" if self.is_online else f"Visto por ultimo as {self.get_last_activity()['hour']}" \
-                                               f" do dia {self.get_last_activity()['day']}"
-
-    class Meta:
-        verbose_name = 'Profile'
-        verbose_name_plural = 'Profiles'
-
-    def __str__(self):
-        return self.name
+from groups.models import GroupNames
+from profiles.models import Profile
 
 
 class Conversation(models.Model):
-    participants = models.ManyToManyField(
-        Profile, related_name='conversations')
-    uuid = models.UUIDField(
-        default=uuid.uuid4, editable=False, unique=True, null=False)
-    is_group = models.BooleanField(
-        null=False, default=False, verbose_name='grupo')
+    participants = models.ManyToManyField(Profile, related_name='conversations')
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, null=False)
+    is_group = models.BooleanField(null=False, default=False, verbose_name='grupo')
 
     class Meta:
         verbose_name = 'Conversation'
@@ -65,23 +31,6 @@ class Conversation(models.Model):
             except ObjectDoesNotExist:
                 GroupNames.objects.create(name='Generic Name', chat=self)
                 return self.chat_data
-
-
-class GroupNames(models.Model):
-    name = models.CharField(null=False, unique=False, max_length=100)
-    chat = models.OneToOneField(Conversation, related_name='chat_data', on_delete=models.CASCADE, null=False,
-                                editable=False)
-    photo = StdImageField(upload_to='profile_photos',
-                          variations={'thumb': {'width': 600,
-                                                'height': 600, 'crop': True}},
-                          default='profile_photos/default_group_profile.png',
-                          verbose_name='Foto de Perfil')
-    admin = models.ManyToManyField(
-        Profile, related_name='group_admins')
-
-    class Meta:
-        verbose_name = 'Group'
-        verbose_name_plural = 'Groups'
 
 
 class Message(models.Model):

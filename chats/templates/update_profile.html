@@ -2,48 +2,54 @@
 
 {% block head_title %} Editar Perfil {% endblock head_title %}
 {% block extra_head %}
-<style>
-    .negrito{
-        font-weight: bold;
+    <style>
+        .negrito {
+            font-weight: bold;
 
-    }
-</style>
+        }
+    </style>
 {% endblock extra_head %}
 
 
 {% load django_bootstrap5 %}
 
 {% block content %}
-<div class="container-fluid d-flex justify-content-center mt-5">
-    <form class="shadow-lg px-4 bg-white rounded justify-content-center py-5" method="POST"
-          enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="text-center mb-3">
-            <img src="/media/{{ currentPhoto }}" alt="profile_photo"
-                 class="border border-primary rounded-circle bg-white w-25">
-        </div>
+    <div class="container-fluid d-flex justify-content-center mt-5">
+        <form class="shadow-lg px-4 bg-white rounded justify-content-center py-5" method="POST"
+              enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="text-center mb-3">
+                <img src="/media/{{ currentPhoto }}" alt="profile_photo"
+                     class="border border-primary rounded-circle bg-white w-25">
+            </div>
+                {{ MEDIA_URL }}
+            <div class="text-center mb-3 profile-container">
+                <img src="/media/{{ currentPhoto }}" alt="Foto de Perfil"
+                     class="profile-image border border-primary rounded-circle bg-white w-25">
+                <i class="bi bi-camera-fill"></i>
+            </div>
 
-        {% bootstrap_form form label_class='negrito' class='mx-2' %}
+            {% bootstrap_form form label_class='negrito' class='mx-2' %}
 
-        <div class="form-group d-flex justify-content-center">
-            <button type="submit" class="btn btn-primary btn-block w-100">
-                Salvar
-            </button>
-        </div>
+            <div class="form-group d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary btn-block w-100">
+                    Salvar
+                </button>
+            </div>
 
-        <div class="text-center">
-            <a href="{% url 'account_email' %}" class="m-3 btn btn-link ">
-                Alterar ou adicionar email
-            </a>
-            <br>
-            <a href="{% url 'account_change_password' %}" class="btn btn-link">
-                Alterar Senha
-            </a>
+            <div class="text-center">
+                <a href="{% url 'account_email' %}" class="m-3 btn btn-link ">
+                    Alterar ou adicionar email
+                </a>
+                <br>
+                <a href="{% url 'account_change_password' %}" class="btn btn-link">
+                    Alterar Senha
+                </a>
 
-        </div>
-    </form>
+            </div>
+        </form>
 
-</div>
+    </div>
 
 {% endblock content %}
 

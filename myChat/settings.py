@@ -11,8 +11,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
-import environ
 from pathlib import Path
+
+import environ
 
 env = environ.Env()
 environ.Env.read_env()
@@ -47,6 +48,9 @@ INSTALLED_APPS = [
 
     # myApps
     'chats',
+    'profiles',
+    'groups',
+
     # allauth
     "django.contrib.sites",
     "allauth",
@@ -168,8 +172,20 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 )
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": env('GOOGLE_CLIENT_ID'),
+            "secret": env('GOOGLE_SECRET_KEY'),
+            "key": "",
+        }
+    }
+    ,
+}
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST')

@@ -5,159 +5,164 @@
 
 {% block head_title %}MyChat{% endblock head_title %}
 {% block extra_head %}
-<link rel="stylesheet" type="text/css" href="{% static '/css/chats.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static '/css/chats.css' %}">
 {% endblock %}
 
 {% if user.is_authenticated %}
-{% block content %}
-<div id="profile_id" data-profile_id="{{ current_profile_id }}" data-currentProfile="{{ request.user.username }}"></div>
-<div class="mt-2">
-    <div class="row no-gutters">
-        <div class="col-md-4 block-chats">
-            <div class="list-group" id="chat_and_search">
-                <div class="input-group border shadow search-bar mb-1">
-                    <input
-                            type="text"
-                            class="form-control border-0 shadow-none"
-                            id="search_input"
-                            placeholder="Pesquisar..."
-                    />
-                    <div class="input-group-append" id="search_button">
+    {% block content %}
+        <div id="profile_id" data-profile_id="{{ current_profile_id }}"
+             data-currentProfile="{{ request.user.username }}"></div>
+        <div class="mt-2">
+            <div class="row no-gutters">
+                <div class="col-md-4 p-0 block-chats">
+                    <div class="list-group" id="chat_and_search">
+                        <div class="input-group border shadow search-bar mb-1">
+                            <input
+                                    type="text"
+                                    class="form-control border-0 shadow-none"
+                                    id="search_input"
+                                    placeholder="Pesquisar..."
+                            />
+                            <div class="input-group-append" id="search_button">
                         <span class="btn input-group-text bg-white border-0 shadow-none">
                           <i class="bi bi-search"></i>
                         </span>
-                    </div>
-                    <div class="dropdown bg-white">
-                        <a class="bi bi-three-dots-vertical text-dark"
-                           style="font-size: x-large;"
-                           type="button"
-                           id="dropdownMenuButton1"
-                           data-bs-toggle="dropdown"
-                           aria-haspopup="true"
-                           aria-expanded="false">
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                            <li
-                                    class="dropdown-item btn btn-primary"
-                                    type="button"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#createGroupForm">
-                                Criar Grupo
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                <div id="chat-list">
-                    {% for c in chats %}
-                    {% if c.last_message or c.data.is_group %}
-                    <div
-                            class="list-group-item list-group-item-action d-flex align-items-center chat-item ml-3 bg-transparent"
-                            data-chat_id="uuid:{{ c.data.uuid }}"
-                    >
-                        <img
-                                class="mr-3 rounded-circle"
-                                src="{{ c.data.photo }}"
-                        />
-                        <div class="messagePreview m-2">
-                            <div class="chat_name h6">{{ c.data.name }}</div>
-                            <div class="last_message">
-                                {% if c.data.is_group %}
-                                <strong>
-                                    {% if c.last_message %}
-                                    {% if user.username != c.last_message.sender.name %}
-                                    {{ c.last_message.sender.name }}:
-                                    {% else %}
-                                    Você:
-                                    {% endif %}
-                                    {% endif %}
-                                </strong>
+                            </div>
+                            <div class="dropdown bg-white">
+                                <a class="bi bi-three-dots-vertical text-dark"
+                                   style="font-size: x-large;"
+                                   type="button"
+                                   id="dropdownMenuButton1"
+                                   data-bs-toggle="dropdown"
+                                   aria-haspopup="true"
+                                   aria-expanded="false">
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                    <li
+                                            class="dropdown-item btn btn-primary"
+                                            type="button"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#createGroupForm">
+                                        Criar Grupo
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div id="chat-list">
+                            {% for c in chats %}
+                                {% if c.last_message or c.data.is_group %}
+                                    <div
+                                            class="list-group-item list-group-item-action d-flex align-items-center chat-item ml-3 bg-transparent"
+                                            data-chat_id="uuid:{{ c.data.uuid }}"
+                                    >
+                                        <img
+                                                class="mr-3 rounded-circle"
+                                                src="{{ c.data.photo }}"
+                                        />
+                                        <div class="messagePreview m-2">
+                                            <div class="chat_name h6">{{ c.data.name }}</div>
+                                            <div class="last_message">
+                                                <strong>
+                                                    {% if c.last_message %}
+                                                        {% if user.username != c.last_message.sender.name %}
+                                                            {% if c.data.is_group %}
+                                                                {{ c.last_message.sender.name }}:
+                                                            {% endif %}
+
+                                                        {% else %}
+                                                            Você:
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </strong>
+
+                                                {{ c.last_message.content }}
+                                            </div>
+                                        </div>
+                                        {% if not c.status_message %}
+                                            <span class="notification"></span>
+                                        {% endif %}
+
+                                    </div>
                                 {% endif %}
-                                {{ c.last_message.content }}
-                            </div>
+                            {% endfor %}
+                            <div id="divResults"></div>
                         </div>
-                        {% if not c.status_message %}
-                        <span class="notification"></span>
-                        {% endif %}
-
                     </div>
-                    {% endif %}
-                    {% endfor %}
-                    <div id="divResults"></div>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-8">
-            <div class="card">
-                <div id="chat-content">
-                    <div
-                            class="list-group-item d-none bg-white p-3"
-                            id="current_chat"
-                    >
-                        <img
-                                class="mx-3 rounded-circle"
-                                src="/media/profile_photos/defaultProfile.png"
-                        />
-                        <div class="flex-grow-1">
-                            <div class="h6 mb-0" id="current_chat_name"></div>
-                            <div class="col d-flex">
-                                <div class="online_status"></div>
-                                <div id="status" class="small"></div>
-                                <div id="groupElements" class="small" style="display: none;"></div>
-                            </div>
-                        </div>
-                        <div class="dropdown ml-auto group-menu" style="display: none;">
-                            <a class="bi bi-three-dots-vertical text-dark"
-                               style="font-size: x-large;"
-                               type="button"
-                               id="dropdownMenuButton1"
-                               data-bs-toggle="dropdown"
-                               aria-haspopup="true"
-                               aria-expanded="false">
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                                <li class="btn dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#menu_group_participants">
-                                    Editar Grupo
-                                </li>
-                            </ul>
-                        </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div id="chat-content">
+                            <div
+                                    class="list-group-item d-none bg-white p-3"
+                                    id="current_chat"
+                            >
+                                <img
+                                        class="mx-3 rounded-circle"
+                                        src="/media/profile_photos/defaultProfile.png"
+                                />
+                                <div class="flex-grow-1">
+                                    <div class="h6 mb-0" id="current_chat_name"></div>
+                                    <div class="col d-flex">
+                                        <div class="online_status"></div>
+                                        <div id="status" class="small"></div>
+                                        <div id="groupElements" class="small" style="display: none;"></div>
+                                    </div>
+                                </div>
+                                <div class="dropdown ml-auto group-menu" style="display: none;">
+                                    <a class="bi bi-three-dots-vertical text-dark"
+                                       style="font-size: x-large;"
+                                       type="button"
+                                       id="dropdownMenuButton1"
+                                       data-bs-toggle="dropdown"
+                                       aria-haspopup="true"
+                                       aria-expanded="false">
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                        <li class="btn dropdown-item" type="button" data-bs-toggle="modal"
+                                            data-bs-target="#menu_group_participants">
+                                            Editar Grupo
+                                        </li>
+                                    </ul>
+                                </div>
 
-                    </div>
-                    <strong id="sendMessage">Selecione ou adicione um amigo para conversar</strong>
-                    <span id="messages"></span>
-                </div>
-                <div class="card-footer">
-                    <div class="input-group">
-                        <input
-                                type="text"
-                                class="form-control"
-                                id="my_input"
-                                placeholder="Digite sua mensagem..."
-                        />
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-success" id="submit_button" type="button">Enviar</button>
+                            </div>
+                            <strong id="sendMessage">Selecione ou adicione um amigo para conversar</strong>
+                            <span id="messages"></span>
+                        </div>
+                        <div class="card-footer">
+                            <div class="input-group">
+                                <input
+                                        type="text"
+                                        class="form-control"
+                                        id="my_input"
+                                        placeholder="Digite sua mensagem..."
+                                />
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-success" id="submit_button" type="button">Enviar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-{% include 'includes/participants_menu_new_group.html' %}
-{% include 'includes/participants_group.html' %}
+        {% include 'includes/participants_menu_new_group.html' %}
+        {% include 'includes/participants_group.html' %}
 
-{{csrf_token|safe|json_script:"csrf_token"}}
+        {{ csrf_token|safe|json_script:"csrf_token" }}
 
-<br/>
+        <br/>
 
-{% endblock content %}
-{% block extra_body %}
-<script src="{% static 'js/chat.js' %}" type="module">
-</script>
-<script src="{% static 'js/createGroupControl.js' %}" type="module">
-</script>
-<script src="{% static 'js/controlParticipantsNewGroup.js' %}" type="module">
-</script>
-<script src="{% static 'js/controlParticipantsGroup.js' %}" type="module">
-</script>
-{% endblock extra_body %}
+    {% endblock content %}
+    {% block extra_body %}
+        <script src="{% static 'js/chat.js' %}" type="module">
+        </script>
+        <script src="{% static 'js/createGroupControl.js' %}" type="module">
+        </script>
+        <script src="{% static 'js/controlParticipantsNewGroup.js' %}" type="module">
+        </script>
+        <script src="{% static 'js/controlParticipantsGroup.js' %}" type="module">
+        </script>
+    {% endblock extra_body %}
 {% endif %}

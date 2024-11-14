@@ -1,30 +1,6 @@
 from django import forms
-from django.contrib.auth.models import User
 
-from chats.models import GroupNames, Profile, Conversation
-
-
-class UpdateProfileForm(forms.ModelForm):
-    photo = forms.ImageField(
-        label='Escolha outra foto de perfil:', required=False)
-    username = forms.CharField(max_length=100, label='Nome de Usuário:')
-
-    class Meta:
-        model = Profile
-        fields = []
-
-    def clean_username(self):
-        username = self.cleaned_data['username'].strip()
-        current_username = self.instance.name
-
-        if len(username) < 3:
-            raise forms.ValidationError(
-                'O nome de usuario deve ter pelo menos 3 letras.')
-        elif User.objects.filter(username=username).exclude(username=current_username).exists():
-            # verify if the username is already in use, excluding the current username of query
-            raise forms.ValidationError(
-                'Este nome de usuário já está em uso. Por favor, escolha outro.')
-        return username
+from chats.models import Conversation
 
 
 class ConversationForm(forms.ModelForm):
@@ -46,7 +22,7 @@ class ConversationForm(forms.ModelForm):
         if not is_group and participants:
             if participants.count() != 2:
                 raise forms.ValidationError({
-                    "participants": "You have to assign two participants in a private chat",
+                    "participants": "Você deve adicionar pelo menos no grupo",
                 })
 
             chat = Conversation.objects.filter(participants=participants[0]).filter(
@@ -55,19 +31,4 @@ class ConversationForm(forms.ModelForm):
                 return self.cleaned_data
             if chat:
                 raise forms.ValidationError("This chat already exists")
-        return self.cleaned_data
-
-
-class CreateGroupForm(forms.ModelForm):
-    class Meta:
-        model = GroupNames
-        fields = ['name', 'photo']
-        labels = {
-            "name": 'Nome do Grupo',
-            "photo": 'Foto do Grupo',
-        }
-
-    def clean(self):
-        if not len(self.cleaned_data['name'].strip()):
-            raise forms.ValidationError({"name": "Empty Group Name"})
         return self.cleaned_data
