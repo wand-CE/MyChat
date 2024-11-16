@@ -19,13 +19,14 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+    # instance.profile.save()
+    pass
 
 
 # the signals below was created to verify if Profile is online or not
 @receiver(user_logged_in)
 def user_logged_in_handler(sender, request, user, **kwargs):
-    current_profile = Profile.objects.get(user=user)
+    current_profile, created = Profile.objects.get_or_create(user=user)
     current_profile.is_online = True
     current_profile.save()
 
