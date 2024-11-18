@@ -86,11 +86,10 @@
     height: 40px;
 }
 
-#current_chat {
-    position: sticky;
-    top: -21px;
-    margin: -1.25em -1.25em 2em -1.25em;
+#chat-header {
+    display: none;
 }
+
 
 .last_message {
     text-overflow: ellipsis;

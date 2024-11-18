@@ -15,14 +15,11 @@ const chat_and_search = document.getElementById("chat_and_search");
 
 const current_chat = document.getElementById("current_chat");
 const current_chat_name = current_chat.querySelector("#current_chat_name");
-const current_chat_img = current_chat.querySelector("img");
+const current_chat_img = current_chat.querySelector("#chat-profile-image");
 
-const current_user_id = parseInt(
-    document.getElementById("profile_id").dataset.profile_id
-);
+const current_user_id = parseInt(document.getElementById("profile_id").dataset.profile_id);
 
-const current_profile_name =
-    document.getElementById("profile_id").dataset.currentprofile;
+const current_profile_name = document.getElementById("profile_id").dataset.currentprofile;
 
 document.getElementById("profile_id").remove();
 
@@ -38,9 +35,7 @@ notifySocket.onmessage = function (event) {
                 ? data.recipient
                 : data.sender;
 
-        let element = document.querySelector(
-            `[data-chat_id="uuid:${data.chat.uuid}"]`
-        );
+        let element = document.querySelector(`[data-chat_id="uuid:${data.chat.uuid}"]`);
 
         if (!element) {
             if (data.chat.is_group) {
@@ -239,16 +234,17 @@ chat_and_search.addEventListener("click", (event) => {
 
     let chatItem = event.target.closest(".chat-item");
 
+
     if (chatItem) {
         document.getElementById("sendMessage").className = "d-none";
+        document.getElementById("chat-header").style.display = "flex";
+
 
         let active_chat = document.querySelector(".active-chat");
         let chatData = chatItem.dataset.chat_id;
 
         if (chatItem.closest("#divResults")) {
-            let elementInList = chat_list.querySelector(
-                `[data-chat_id='${chatData}']`
-            );
+            let elementInList = chat_list.querySelector(`[data-chat_id='${chatData}']`);
             if (!elementInList) {
                 chat_list.appendChild(chatItem);
             } else {
@@ -303,6 +299,9 @@ function populate_messages([user, is_read, message, message_time, is_group]) {
 
     let div = document.createElement("div");
     let div_child = document.createElement("div");
+    const spanMessage = document.createElement('span');
+    const spanTime = document.createElement('span');
+
 
     div_child.classList.add(
         "p-2",
@@ -312,20 +311,27 @@ function populate_messages([user, is_read, message, message_time, is_group]) {
         "flex-column"
     );
 
+    spanTime.classList.add('ml-auto', 'time');
+    spanTime.style.fontSize = '11px';
+    spanTime.textContent = time[1];
+
+    spanMessage.appendChild(spanTime);
+
+
     div_child.style.minWidth = "60px";
     div.classList.add("d-flex", "mb-2");
     if (user.id === current_user_id) {
         div.classList.add("justify-content-end");
         div_child.classList.add("bg-primary");
+        spanMessage.classList.add('mr-4');
+        spanMessage.style.fontSize = '14px';
+        spanMessage.textContent = message;
 
-        div_child.innerHTML += `<span class="mr-4" style='font-size:14px'>${message}</span>
-                         <span class="ml-auto time" style='font-size:11px'>${time[1]}
-                         </span>`;
         let check = document.createElement("i");
         check.className = `bi bi-check${is_read ? "-all" : ""}`;
         check.style.fontSize = "large";
 
-        div_child.querySelector(".time").appendChild(check);
+        spanTime.appendChild(check);
     } else {
         div_child.innerHTML = is_group ? `<strong>${user.name}</strong>` : "";
         div.classList.add("justify-content-start");

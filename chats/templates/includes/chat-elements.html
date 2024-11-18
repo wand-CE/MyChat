@@ -1,0 +1,49 @@
+<div id="current_chat" class="col-md-8 d-flex flex-column">
+    <div id="chat-header" class="bg-white p-3 justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <img id="chat-profile-image" class="mx-3 rounded-circle" src="/media/profile_photos/defaultProfile.png"
+                 width="40px" height="40px"/>
+            <div class="flex-grow-1">
+                <div class="h6 mb-0" id="current_chat_name"></div>
+                <div class="col d-flex">
+                    <div class="online_status"></div>
+                    <div id="status" class="small"></div>
+                    <div id="groupElements" class="small" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="dropdown ml-auto group-menu" style="display: none;">
+            <a class="bi bi-three-dots-vertical text-dark"
+               style="font-size: x-large;"
+               type="button"
+               id="dropdownMenuButton1"
+               data-bs-toggle="dropdown"
+               aria-haspopup="true"
+               aria-expanded="false">
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                <li class="btn dropdown-item" type="button" data-bs-toggle="modal"
+                    data-bs-target="#menu_group_participants">
+                    Editar Grupo
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div id="chat-content" class="flex-fill p-5 overflow-auto">
+        <strong id="sendMessage">Selecione ou adicione um amigo para conversar</strong>
+        <span id="messages"></span>
+    </div>
+    <div class="p-3 bg-white border-top">
+        <div class="input-group">
+            <input
+                    type="text"
+                    class="form-control"
+                    id="my_input"
+                    placeholder="Digite sua mensagem..."
+            />
+            <button class="btn btn-outline-success" id="submit_button" type="button">
+                Enviar
+            </button>
+        </div>
+    </div>
+</div>
