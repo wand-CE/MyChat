@@ -12,7 +12,7 @@
     {% block content %}
         <div id="profile_id" data-profile_id="{{ current_profile_id }}"
              data-currentProfile="{{ request.user.username }}"></div>
-        <div class="d-flex" style="height: calc(100vh - 56px)">
+        <div class="all-content">
             {% include 'includes/list-chats.html' %}
             {% include 'includes/chat-elements.html' %}
         </div>
@@ -32,6 +32,8 @@
         <script src="{% static 'js/controlParticipantsNewGroup.js' %}" type="module">
         </script>
         <script src="{% static 'js/controlParticipantsGroup.js' %}" type="module">
+        </script>
+        <script src="{% static 'js/groupsSidebar.js' %}" type="module">
         </script>
     {% endblock extra_body %}
 {% endif %}

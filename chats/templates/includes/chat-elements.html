@@ -22,28 +22,20 @@
                aria-expanded="false">
             </a>
             <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                <li class="btn dropdown-item" type="button" data-bs-toggle="modal"
-                    data-bs-target="#menu_group_participants">
+                <li class="btn dropdown-item" data-bs-toggle="modal" data-bs-target="#menu_group_participants">
                     Editar Grupo
                 </li>
             </ul>
         </div>
     </div>
-    <div id="chat-content" class="flex-fill p-5 overflow-auto">
+    <div id="chat-content" class="flex-fill p-5">
         <strong id="sendMessage">Selecione ou adicione um amigo para conversar</strong>
         <span id="messages"></span>
     </div>
     <div class="p-3 bg-white border-top">
         <div class="input-group">
-            <input
-                    type="text"
-                    class="form-control"
-                    id="my_input"
-                    placeholder="Digite sua mensagem..."
-            />
-            <button class="btn btn-outline-success" id="submit_button" type="button">
-                Enviar
-            </button>
+            <input type="text" class="form-control" id="my_input" placeholder="Digite sua mensagem..."/>
+            <button class="btn btn-outline-success" id="submit_button" type="button"> Enviar</button>
         </div>
     </div>
 </div>

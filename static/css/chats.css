@@ -114,10 +114,26 @@
 }
 
 @media (max-width: 767px) {
-    .block-chats {
-        max-height: 12em;
-        height: 12em;
+    #openOffcanvasButton {
+        bottom: 60px;
+        right: 10px;
     }
+
+    .all-content {
+        height: 100vh;
+    }
+
+
+}
+
+@media (min-width: 768px) {
+    .all-content {
+        display: flex;
+    }
+}
+
+.all-content, #current_chat {
+    height: calc(100vh - 56px);
 }
 
 #id_participants,
@@ -130,3 +146,4 @@
 .was-validated #searchParticipants:valid {
     background-image: none;
 }
+

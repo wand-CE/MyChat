@@ -1,19 +1,15 @@
-export const csrftoken = JSON.parse(
-    document.getElementById("csrf_token").textContent
-);
+export const csrftoken = JSON.parse(document.getElementById("csrf_token").textContent);
 
-document.addEventListener("DOMContentLoaded", () =>
-    document.getElementById("csrf_token").remove()
-);
+document.addEventListener("DOMContentLoaded", () => document.getElementById("csrf_token").remove());
 
 export const chat_list = document.getElementById("chat-list");
 
 export function createChatElement(chatUuid, photo, name, message = "") {
     let element = document.createElement("div");
 
-    element.className =
-        "list-group-item list-group-item-action d-flex align-items-center chat-item ml-3 bg-transparent";
+    element.className = "list-group-item list-group-item-action d-flex align-items-center chat-item ml-3 bg-transparent";
     element.dataset.chat_id = `uuid:${chatUuid}`;
+    element.dataset.bsDismiss = "offcanvas";
     element.innerHTML = `<img class="mr-3 rounded-circle" src="${photo}"/>
                           <div class="messagePreview m-2">
                             <div class="chat_name h6">${name}</div>

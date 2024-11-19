@@ -23,18 +23,12 @@ const current_profile_name = document.getElementById("profile_id").dataset.curre
 
 document.getElementById("profile_id").remove();
 
-const notifySocket = new WebSocket(
-    `ws://${window.location.host}/ws/notify/${current_user_id}`
-);
+const notifySocket = new WebSocket(`ws://${window.location.host}/ws/notify/${current_user_id}`);
 
 notifySocket.onmessage = function (event) {
     let data = JSON.parse(event.data);
     if (data.type === "notify_user") {
-        let chatProfile =
-            parseInt(data.sender.id) === current_user_id
-                ? data.recipient
-                : data.sender;
-
+        let chatProfile = parseInt(data.sender.id) === current_user_id ? data.recipient : data.sender;
         let element = document.querySelector(`[data-chat_id="uuid:${data.chat.uuid}"]`);
 
         if (!element) {
@@ -179,7 +173,7 @@ function claim_websocket(chat_data, chatItem) {
                 const messageInput = document.querySelector("#my_input").value;
                 document.querySelector("#my_input").value = "";
 
-                if (messageInput.length == 0) {
+                if (messageInput.length === 0) {
                     alert("Escreva algo!");
                 } else {
                     chatSocket.send(
@@ -197,7 +191,7 @@ function claim_websocket(chat_data, chatItem) {
                 const data = JSON.parse(e.data);
                 if (data.type === "send_message") {
                     const active_chat = document.querySelector(".active-chat");
-                    if (data.user_id == current_user_id) {
+                    if (data.user.id === current_user_id) {
                         active_chat.querySelector(".last_message").innerHTML = data.message;
                     }
                     chat_list.insertBefore(active_chat, chat_list.children[0]);
@@ -276,8 +270,7 @@ chat_and_search.addEventListener("click", (event) => {
         );
 
         current_chat_img.src = chatItem.querySelector("img").src;
-        current_chat_name.innerHTML =
-            chatItem.querySelector(".chat_name").innerHTML;
+        current_chat_name.innerHTML = chatItem.querySelector(".chat_name").innerHTML;
         current_chat.classList.remove("d-none");
         current_chat.classList.add("d-flex");
     }
@@ -297,53 +290,57 @@ function populate_messages([user, is_read, message, message_time, is_group]) {
         messages.appendChild(dateDiv);
     }
 
-    let div = document.createElement("div");
+    let div_parent = document.createElement("div");
     let div_child = document.createElement("div");
+
     const spanMessage = document.createElement('span');
-    const spanTime = document.createElement('span');
 
-
-    div_child.classList.add(
-        "p-2",
-        "text-white",
-        "rounded",
-        "d-flex",
-        "flex-column"
-    );
-
-    spanTime.classList.add('ml-auto', 'time');
-    spanTime.style.fontSize = '11px';
-    spanTime.textContent = time[1];
-
-    spanMessage.appendChild(spanTime);
+    div_child.className = "p-2 text-white rounded d-flex flex-column";
 
 
     div_child.style.minWidth = "60px";
-    div.classList.add("d-flex", "mb-2");
+    div_parent.classList.add("d-flex", "mb-2");
+
+    spanMessage.classList.add('mr-4');
+    spanMessage.style.fontSize = '14px';
+    spanMessage.style.overflowWrap = 'break-word';
+
+    spanMessage.textContent = message;
+
     if (user.id === current_user_id) {
-        div.classList.add("justify-content-end");
+        const spanTime = document.createElement('span');
+
+        spanTime.classList.add('ml-auto', 'time');
+        spanTime.style.fontSize = '11px';
+        spanTime.textContent = time[1];
+
+        spanMessage.appendChild(spanTime);
+
+        div_parent.classList.add("justify-content-end");
         div_child.classList.add("bg-primary");
-        spanMessage.classList.add('mr-4');
-        spanMessage.style.fontSize = '14px';
-        spanMessage.textContent = message;
+
 
         let check = document.createElement("i");
         check.className = `bi bi-check${is_read ? "-all" : ""}`;
         check.style.fontSize = "large";
 
         spanTime.appendChild(check);
+        div_child.appendChild(spanMessage);
+        div_child.appendChild(spanTime);
+
     } else {
         div_child.innerHTML = is_group ? `<strong>${user.name}</strong>` : "";
-        div.classList.add("justify-content-start");
+        div_parent.classList.add("justify-content-start");
         div_child.classList.add("bg-secondary");
 
-        div_child.innerHTML += `<span class="mr-4" style='font-size:14px'>${message}</span>
-                         <span class="ml-auto" style='font-size:11px'>${time[1]}</span>`;
+        div_child.appendChild(spanMessage);
+
+        div_child.innerHTML += `<span class="ml-auto" style='font-size:11px'>${time[1]}</span>`;
     }
 
-    div.appendChild(div_child);
+    div_parent.appendChild(div_child);
+    messages.appendChild(div_parent);
 
-    messages.appendChild(div);
     scrollToBottom();
 }
 
@@ -361,25 +358,18 @@ search_input.addEventListener("input", () => {
     chat_and_search.appendChild(divResults);
 
     searchUsers(search_input.value)
-        .then((response) =>
-            response.ok ? response.json() : new Error(response.status)
-        )
+        .then((response) => response.ok ? response.json() : new Error(response.status))
         .then((data) => {
             const results = data.profiles;
             divResults.innerHTML = "";
 
+            const element = document.createElement("div");
+            element.className = "list-group-item list-group-item-action d-flex align-items-center"
             if (results.length) {
                 results.forEach((result) => {
-                    const element = document.createElement("div");
-
-                    element.classList.add(
-                        "list-group-item",
-                        "list-group-item-action",
-                        "d-flex",
-                        "align-items-center",
-                        "chat-item"
-                    );
+                    element.classList.add("chat-item");
                     element.dataset.chat_id = result.uuid;
+                    element.dataset.bsDismiss = "offcanvas";
 
                     let profile_photo = document.createElement("img");
                     profile_photo.className = "mr-3 rounded-circle";
@@ -387,25 +377,12 @@ search_input.addEventListener("input", () => {
 
                     element.appendChild(profile_photo);
                     element.innerHTML += `<div class="messagePreview m-2">
-            <div class="chat_name h6">${result.name}</div>
-            <div class="last_message"></div>
-          </div>`;
-
-                    divResults.appendChild(element);
+                                            <div class="chat_name h6">${result.name}</div><div class="last_message"></div>
+                                          </div>`;
                 });
             } else {
-                const element = document.createElement("div");
-
-                element.classList.add(
-                    "list-group-item",
-                    "list-group-item-action",
-                    "d-flex",
-                    "align-items-center"
-                );
-
                 element.innerHTML += "Usuário não encontrado";
-
-                divResults.appendChild(element);
             }
+            divResults.appendChild(element);
         });
 });
