@@ -1,7 +1,12 @@
-from django.urls import path, include, re_path
-from .consumers import ChatRoomConsumer, NotificationConsumer
+from django.urls import path, re_path
 
-websocket_urlpatterns = [
-    re_path(r'ws/chat/(?P<chat_uuid>[\w-]+)/$', ChatRoomConsumer.as_asgi()),
-    path('ws/notify/<int:profile_id>', NotificationConsumer.as_asgi()),
-]
+
+def get_consumers():
+    from .consumers import ChatRoomConsumer, NotificationConsumer
+    return [
+        re_path(r'ws/chat/(?P<chat_uuid>[\w-]+)/$', ChatRoomConsumer.as_asgi()),
+        path('ws/notify/<int:profile_id>', NotificationConsumer.as_asgi()),
+    ]
+
+
+websocket_urlpatterns = get_consumers()
